@@ -1,5 +1,6 @@
 import ReviewCarousel from "@/components/ReviewCarousel";
 import ScheduleGenerator from "@/components/ScheduleGenerator";
+import { BASE_PATH } from "@/lib/base-path";
 import { buildShareQuery, parseShareSearchParams } from "@/lib/share-params";
 
 export async function generateMetadata({ searchParams }) {
@@ -15,7 +16,7 @@ export async function generateMetadata({ searchParams }) {
     : "Free baby sleep schedule generator. Four questions, and a starting schedule for naps and bedtime built from your baby's age and this morning's wake-up.";
 
   const query = buildShareQuery({ name, dob, wake, struggle });
-  const ogImage = `/api/og${query ? `?${query}` : ""}`;
+  const ogImage = `${BASE_PATH}/api/og${query ? `?${query}` : ""}`;
 
   return {
     title,

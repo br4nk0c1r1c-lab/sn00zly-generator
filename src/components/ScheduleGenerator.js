@@ -15,6 +15,7 @@ import {
 import { poss, rangeStr } from "@/lib/schedule-format";
 import { buildShareQuery } from "@/lib/share-params";
 import { trackEvent } from "@/lib/analytics";
+import { BASE_PATH } from "@/lib/base-path";
 
 const STRUGGLE_CHIPS = [
   { k: "short", label: "Short naps" },
@@ -62,7 +63,7 @@ function ShareLinkButton({ name, dob, wake, struggle }) {
   async function handleClick() {
     trackEvent("share_click");
     const query = buildShareQuery({ name, dob, wake, struggle });
-    const url = `${window.location.origin}/${query ? `?${query}` : ""}`;
+    const url = `${window.location.origin}${BASE_PATH}/${query ? `?${query}` : ""}`;
     let copied = false;
     try {
       await navigator.clipboard.writeText(url);
@@ -96,7 +97,7 @@ function SaveImageButton({ name, dob, wake, struggle }) {
     setBusy(true);
     try {
       const query = buildShareQuery({ name, dob, wake, struggle });
-      const res = await fetch(`/api/og?format=story&${query}`);
+      const res = await fetch(`${BASE_PATH}/api/og?format=story&${query}`);
       if (!res.ok) throw new Error("image request failed");
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
