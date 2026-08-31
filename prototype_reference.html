@@ -1,0 +1,927 @@
+<title>Sn00zly Sleep Schedule Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap">
+<style>
+:root{
+  --navy:#2F4F7F;
+  --navy-deep:#22395C;
+  --navy-dark:#1C3257;
+  --cream:#FBF7F0;
+  --ivory:#F7F1E8;
+  --beige:#F0E6D8;
+  --surface:#FFFFFF;
+  --lavender:#DAD4F2;
+  --lavender-deep:#B9AEE0;
+  --gold:#C9A463;
+  --gold-soft:#E7D6AE;
+  --ink:#33405A;
+  --ink-soft:#5C6A85;
+  --ink-muted:#8A94A8;
+  --hairline:rgba(47,79,127,.12);
+  --hairline-soft:rgba(47,79,127,.07);
+  --red-soft:#F4DCD7;
+  --red-border:#E7C5C0;
+  --red-text:#9A4E3F;
+  --green-soft:#DCEEE3;
+  --green-text:#3D7A5C;
+  --shadow-card:0 6px 18px rgba(47,79,127,.08);
+  --shadow-lift:0 14px 38px rgba(47,79,127,.16);
+  --sleep-fill:linear-gradient(135deg,#3A5A8C 0%,#22395C 100%);
+  --awake-fill:#F0E6D8;
+  --r-sm:8px; --r-md:14px; --r-lg:20px; --r-pill:100px;
+}
+
+/* Night mode — a sleep brand that stays legible at 3am. Same identity, inverted ground. */
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --navy:#8FB0DC;
+    --navy-deep:#A8C4E8;
+    --navy-dark:#0E1727;
+    --cream:#111C2E;
+    --ivory:#18253A;
+    --beige:#20304A;
+    --surface:#18253A;
+    --lavender:#2C2F4E;
+    --lavender-deep:#3D4170;
+    --gold:#D9B87C;
+    --gold-soft:#4A3F27;
+    --ink:#E4EAF5;
+    --ink-soft:#A8B4CA;
+    --ink-muted:#7C8AA4;
+    --hairline:rgba(168,196,232,.16);
+    --hairline-soft:rgba(168,196,232,.09);
+    --red-soft:#3A211C;
+    --red-border:#5A342C;
+    --red-text:#E8A594;
+    --green-soft:#1B3328;
+    --green-text:#8FCFAE;
+    --shadow-card:0 6px 18px rgba(0,0,0,.34);
+    --shadow-lift:0 14px 38px rgba(0,0,0,.46);
+    --sleep-fill:linear-gradient(135deg,#4E76B0 0%,#2C4771 100%);
+    --awake-fill:#243550;
+  }
+}
+:root[data-theme="dark"]{
+  --navy:#8FB0DC; --navy-deep:#A8C4E8; --navy-dark:#0E1727;
+  --cream:#111C2E; --ivory:#18253A; --beige:#20304A; --surface:#18253A;
+  --lavender:#2C2F4E; --lavender-deep:#3D4170;
+  --gold:#D9B87C; --gold-soft:#4A3F27;
+  --ink:#E4EAF5; --ink-soft:#A8B4CA; --ink-muted:#7C8AA4;
+  --hairline:rgba(168,196,232,.16); --hairline-soft:rgba(168,196,232,.09);
+  --red-soft:#3A211C; --red-border:#5A342C; --red-text:#E8A594;
+  --green-soft:#1B3328; --green-text:#8FCFAE;
+  --shadow-card:0 6px 18px rgba(0,0,0,.34);
+  --shadow-lift:0 14px 38px rgba(0,0,0,.46);
+  --sleep-fill:linear-gradient(135deg,#4E76B0 0%,#2C4771 100%);
+  --awake-fill:#243550;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  background:var(--cream);
+  color:var(--ink);
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:4px}
+
+.wrap{max-width:560px;margin:0 auto;padding:0 20px 64px}
+.wide{max-width:920px;margin:0 auto;padding:0 20px 80px}
+
+/* ── Prototype strip ─────────────────────────────────────── */
+.proto-strip{
+  background:var(--navy-dark);
+  color:var(--gold-soft);
+  font-size:11px;
+  letter-spacing:.8px;
+  text-align:center;
+  padding:9px 20px;
+  border-bottom:1px solid rgba(201,164,99,.25);
+}
+:root[data-theme="dark"] .proto-strip,
+:root:not([data-theme="light"]) .proto-strip{color:var(--gold)}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]) .proto-strip{color:var(--gold-soft)}}
+
+/* ── App header ──────────────────────────────────────────── */
+.app-head{
+  padding:36px 0 26px;
+  text-align:center;
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+}
+.brandmark{
+  display:flex;align-items:center;gap:9px;
+  font-size:13px;font-weight:600;letter-spacing:3px;text-transform:uppercase;
+  color:var(--navy);
+}
+.brandmark .moon{width:17px;height:17px;display:block}
+.eyebrow{
+  font-size:10px;letter-spacing:3px;font-weight:600;text-transform:uppercase;
+  color:var(--gold);
+}
+h1{
+  font-size:clamp(27px,6.4vw,36px);
+  font-weight:600;line-height:1.16;color:var(--navy);
+  text-wrap:balance;letter-spacing:-.2px;
+}
+.lede{
+  font-family:'Lora',Georgia,serif;font-style:italic;
+  color:var(--ink-soft);font-size:15px;line-height:1.55;
+  max-width:38ch;text-wrap:balance;
+}
+.trustline{
+  display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-top:6px;
+}
+.chip-trust{
+  font-size:10.5px;letter-spacing:1.1px;text-transform:uppercase;font-weight:600;
+  color:var(--navy);background:var(--surface);
+  border:1px solid var(--hairline);
+  border-radius:var(--r-pill);padding:5px 11px;
+}
+
+/* ── Cards ───────────────────────────────────────────────── */
+.card{
+  background:var(--surface);
+  border:1px solid var(--hairline-soft);
+  border-radius:var(--r-lg);
+  box-shadow:var(--shadow-card);
+  padding:24px;
+}
+.card + .card{margin-top:16px}
+.card-label{
+  font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;
+  color:var(--ink-muted);margin-bottom:16px;
+  padding-bottom:11px;border-bottom:1px solid var(--hairline-soft);
+}
+
+/* ── Form ────────────────────────────────────────────────── */
+.field-grid{display:flex;flex-direction:column;gap:16px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{
+  font-size:11.5px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;
+  color:var(--ink-soft);
+}
+.field .hint{font-size:11.5px;color:var(--ink-muted);letter-spacing:0}
+input[type="text"],input[type="date"],input[type="time"]{
+  font-family:inherit;font-size:16px;color:var(--ink);
+  background:var(--ivory);
+  border:1px solid var(--hairline);
+  border-radius:var(--r-md);
+  padding:13px 15px;width:100%;
+}
+input::placeholder{color:var(--ink-muted)}
+.two-up{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:430px){.two-up{grid-template-columns:1fr}}
+
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{
+  font-family:inherit;font-size:12.5px;font-weight:500;
+  color:var(--ink-soft);background:var(--ivory);
+  border:1px solid var(--hairline);
+  border-radius:var(--r-pill);padding:8px 14px;cursor:pointer;
+  transition:background .16s ease,color .16s ease,border-color .16s ease;
+}
+.chip:hover{border-color:var(--lavender-deep)}
+.chip[aria-pressed="true"]{
+  background:var(--navy);color:var(--cream);border-color:var(--navy);
+}
+:root[data-theme="dark"] .chip[aria-pressed="true"],
+:root:not([data-theme="light"]) .chip[aria-pressed="true"]{color:var(--navy-dark)}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]) .chip[aria-pressed="true"]{color:var(--cream)}}
+
+.btn{
+  font-family:inherit;font-size:15px;font-weight:600;letter-spacing:.3px;
+  border:none;border-radius:var(--r-pill);
+  padding:15px 26px;width:100%;cursor:pointer;
+  background:var(--navy);color:#FBF7F0;
+  transition:transform .14s ease,box-shadow .14s ease;
+  box-shadow:0 4px 14px rgba(47,79,127,.22);
+}
+:root[data-theme="dark"] .btn,
+:root:not([data-theme="light"]) .btn{color:#0E1727}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]) .btn{color:#FBF7F0}}
+.btn:hover{transform:translateY(-1px);box-shadow:var(--shadow-lift)}
+.btn:active{transform:translateY(0)}
+.btn-ghost{
+  background:transparent;color:var(--navy);
+  border:1.5px solid var(--navy);box-shadow:none;
+}
+.btn-ghost:hover{background:var(--ivory);box-shadow:none;transform:none}
+.btn-gold{background:var(--gold);color:#2A2011;box-shadow:0 4px 14px rgba(201,164,99,.3)}
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+@media (max-width:430px){.btn-row{grid-template-columns:1fr}}
+.no-signup{
+  text-align:center;font-size:11.5px;color:var(--ink-muted);margin-top:11px;
+}
+
+/* ── Result ──────────────────────────────────────────────── */
+#result[hidden]{display:none}
+.result-head{text-align:center;padding:38px 0 22px;display:flex;flex-direction:column;align-items:center;gap:8px}
+.result-head h2{
+  font-size:clamp(24px,5.6vw,31px);font-weight:600;color:var(--navy);line-height:1.2;
+  text-wrap:balance;
+}
+.age-pill{
+  font-size:11px;letter-spacing:1.6px;text-transform:uppercase;font-weight:600;
+  color:var(--navy);background:var(--lavender);
+  border-radius:var(--r-pill);padding:5px 13px;
+}
+
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:16px}
+@media (max-width:520px){.tiles{grid-template-columns:repeat(2,1fr)}}
+.tile{
+  background:var(--surface);border:1px solid var(--hairline-soft);
+  border-radius:var(--r-md);padding:14px 12px;text-align:center;
+  box-shadow:var(--shadow-card);
+  display:flex;flex-direction:column;gap:3px;
+}
+.tile .tv{
+  font-size:20px;font-weight:600;color:var(--navy);line-height:1.15;
+  font-variant-numeric:tabular-nums;
+}
+.tile .tl{font-size:9.5px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink-muted);font-weight:600}
+
+/* Timeline */
+.tl-list{display:flex;flex-direction:column}
+.tl-row{display:grid;grid-template-columns:82px 1fr;gap:13px;align-items:stretch}
+.tl-time{
+  font-size:13px;font-weight:600;color:var(--navy);
+  font-variant-numeric:tabular-nums;padding-top:12px;text-align:right;
+  letter-spacing:-.3px;line-height:1.3;
+}
+.tl-time .exact{color:var(--gold);font-size:9.5px;letter-spacing:1.2px;text-transform:uppercase;display:block;font-weight:600}
+.honest{
+  font-size:12.5px;line-height:1.55;color:var(--ink-soft);
+  background:var(--ivory);border:1px solid var(--hairline);
+  border-radius:var(--r-md);padding:11px 15px;max-width:46ch;margin-top:6px;
+}
+.tile .tv.sm{font-size:14.5px;padding-top:3px}
+.recalc{display:grid;grid-template-columns:1fr 118px;gap:10px;margin-top:14px}
+@media (max-width:430px){.recalc{grid-template-columns:1fr}}
+select{
+  font-family:inherit;font-size:15px;color:var(--ink);
+  background:var(--ivory);border:1px solid var(--hairline);
+  border-radius:var(--r-md);padding:13px 14px;width:100%;
+}
+.anchor-on{
+  font-size:12px;color:var(--green-text);background:var(--green-soft);
+  border-radius:var(--r-pill);padding:5px 12px;display:inline-block;margin-bottom:12px;font-weight:600;
+}
+.tl-body{
+  border-left:2px solid var(--hairline);
+  padding:0 0 0 16px;position:relative;
+}
+.tl-row:last-child .tl-body{border-left-color:transparent}
+.tl-dot{
+  position:absolute;left:-6px;top:15px;
+  width:10px;height:10px;border-radius:50%;
+  background:var(--gold);border:2px solid var(--cream);
+}
+.block{
+  border-radius:var(--r-md);padding:12px 15px;margin:7px 0;
+  display:flex;justify-content:space-between;align-items:center;
+  gap:6px 12px;flex-wrap:wrap;
+}
+.block.sleep{background:var(--sleep-fill);color:#F7F1E8}
+.block.awake{background:var(--awake-fill);color:var(--ink-soft)}
+.block.bed{background:var(--navy-dark);color:var(--gold-soft);border:1px solid var(--gold)}
+:root[data-theme="dark"] .block.bed,
+:root:not([data-theme="light"]) .block.bed{background:#0A121F;color:var(--gold)}
+.block .bt{font-size:13.5px;font-weight:600;letter-spacing:.2px}
+.block .bs{font-size:11.5px;opacity:.72;font-variant-numeric:tabular-nums}
+.block.sleep .bs{opacity:.68}
+
+/* Component cards reused from the guide design system */
+.note{border-radius:var(--r-md);padding:16px 19px;margin-top:12px}
+.note strong{font-size:12.5px;display:block;margin-bottom:5px;letter-spacing:.2px}
+.note p{font-size:13px;line-height:1.55}
+.note-expert{background:var(--navy);color:#F7F1E8}
+:root[data-theme="dark"] .note-expert,
+:root:not([data-theme="light"]) .note-expert{background:var(--ivory);color:var(--ink);border:1px solid var(--hairline)}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]) .note-expert{background:var(--navy);color:#F7F1E8;border:none}}
+.note-expert strong{color:var(--gold-soft)}
+:root[data-theme="dark"] .note-expert strong,
+:root:not([data-theme="light"]) .note-expert strong{color:var(--gold)}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]) .note-expert strong{color:var(--gold-soft)}}
+.note-dyk{background:var(--lavender)}
+.note-dyk strong{color:var(--navy)}
+.note-dyk p{color:var(--ink)}
+.note-alert{background:var(--red-soft);border:1px solid var(--red-border)}
+.note-alert strong,.note-alert p{color:var(--red-text)}
+.note-next{background:var(--green-soft)}
+.note-next strong{color:var(--green-text)}
+.note-next p{color:var(--green-text)}
+
+/* Share card */
+.share-stage{
+  display:flex;justify-content:center;padding:6px 0 4px;
+}
+.share-card{
+  width:270px;aspect-ratio:9/16;border-radius:var(--r-lg);
+  background:linear-gradient(165deg,#3A5A8C 0%,#1C3257 100%);
+  box-shadow:var(--shadow-lift);
+  padding:26px 22px;display:flex;flex-direction:column;
+  color:#F7F1E8;position:relative;overflow:hidden;
+}
+.share-card::after{
+  content:"";position:absolute;right:-58px;top:-58px;
+  width:170px;height:170px;border-radius:50%;
+  background:rgba(218,212,242,.09);
+}
+.sc-brand{font-size:9px;letter-spacing:3px;text-transform:uppercase;font-weight:600;color:rgba(247,241,232,.62)}
+.sc-name{font-size:23px;font-weight:600;line-height:1.15;margin-top:14px;position:relative}
+.sc-age{font-family:'Lora',Georgia,serif;font-style:italic;font-size:12.5px;color:#E7D6AE;margin-top:3px}
+.sc-rule{width:28px;height:2px;background:#C9A463;border-radius:2px;margin:14px 0 12px}
+.sc-rows{display:flex;flex-direction:column;gap:7px;flex:1;position:relative}
+.sc-row{display:flex;justify-content:space-between;font-size:11.5px;font-variant-numeric:tabular-nums}
+.sc-row span:first-child{color:rgba(247,241,232,.72)}
+.sc-row span:last-child{font-weight:600}
+.sc-foot{font-size:8.5px;letter-spacing:1.8px;text-transform:uppercase;color:rgba(247,241,232,.5);text-align:center;position:relative}
+
+/* Email + upsell */
+.capture{
+  background:var(--ivory);border:1px solid var(--hairline);
+  border-radius:var(--r-lg);padding:24px;
+}
+.capture h3{font-size:18px;font-weight:600;color:var(--navy);line-height:1.28;text-wrap:balance}
+.capture p{font-size:13.5px;color:var(--ink-soft);margin-top:7px}
+.capture .field{margin-top:15px}
+
+.upsell{
+  background:var(--surface);border:1px solid var(--gold);
+  border-radius:var(--r-lg);padding:24px;box-shadow:var(--shadow-card);
+}
+.upsell .tag{
+  display:inline-block;font-size:9.5px;letter-spacing:1.6px;text-transform:uppercase;font-weight:600;
+  color:var(--navy);background:var(--gold-soft);border-radius:var(--r-pill);padding:4px 10px;
+}
+:root[data-theme="dark"] .upsell .tag,
+:root:not([data-theme="light"]) .upsell .tag{color:var(--gold)}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]) .upsell .tag{color:var(--navy)}}
+.upsell h3{font-size:19px;font-weight:600;color:var(--navy);margin-top:11px;line-height:1.28;text-wrap:balance}
+.upsell p{font-size:13.5px;color:var(--ink-soft);margin-top:8px}
+.upsell .price{
+  display:flex;align-items:baseline;gap:9px;margin-top:14px;
+}
+.upsell .price .p{font-size:26px;font-weight:600;color:var(--navy);font-variant-numeric:tabular-nums}
+.upsell .price .was{font-size:13px;color:var(--ink-muted);text-decoration:line-through}
+.upsell .btn{margin-top:14px}
+
+.disclaimer{
+  font-size:11px;color:var(--ink-muted);line-height:1.55;
+  text-align:center;margin-top:22px;max-width:44ch;margin-inline:auto;
+}
+
+/* ── Build notes (for Branko, not the end user) ──────────── */
+.notes-wrap{
+  background:var(--navy-dark);
+  padding:56px 0 64px;margin-top:56px;
+}
+.notes-wrap .wide{padding-bottom:0}
+.notes-eyebrow{font-size:10px;letter-spacing:3px;text-transform:uppercase;font-weight:600;color:var(--gold)}
+.notes-wrap h2{
+  font-size:26px;font-weight:600;color:#F7F1E8;margin-top:8px;line-height:1.22;text-wrap:balance;
+}
+.notes-wrap .sub{
+  font-family:'Lora',Georgia,serif;font-style:italic;
+  color:rgba(247,241,232,.62);font-size:14.5px;margin-top:8px;max-width:56ch;
+}
+.notes-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:28px}
+@media (max-width:700px){.notes-grid{grid-template-columns:1fr}}
+.nc{
+  background:rgba(247,241,232,.05);
+  border:1px solid rgba(231,214,174,.16);
+  border-radius:var(--r-md);padding:19px 21px;
+}
+.nc h4{font-size:13px;font-weight:600;color:#E7D6AE;letter-spacing:.3px}
+.nc ul{list-style:none;margin-top:10px;display:flex;flex-direction:column;gap:7px}
+.nc li{
+  font-size:13px;line-height:1.5;color:rgba(247,241,232,.8);
+  display:flex;gap:9px;align-items:flex-start;
+}
+.nc li::before{content:"→";color:var(--gold);flex:none;font-weight:700}
+.nc.warn{border-color:rgba(232,165,148,.3);background:rgba(232,165,148,.06)}
+.nc.warn h4{color:#E8A594}
+.nc.warn li::before{content:"!";color:#E8A594}
+
+@media (prefers-reduced-motion:no-preference){
+  .reveal{animation:rise .45s cubic-bezier(.22,.8,.3,1) both}
+  @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+}
+</style>
+
+<div class="proto-strip">PROTOTIP v3 · brojevi su sada iz kanonske tabele (snoozly_canon.json v1.0), ne placeholder</div>
+
+<div class="wrap">
+
+  <header class="app-head">
+    <div class="brandmark">
+      <svg class="moon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20.5 14.6A8.7 8.7 0 0 1 9.4 3.5a8.7 8.7 0 1 0 11.1 11.1Z" fill="currentColor"/><circle cx="17.5" cy="5.5" r="1.3" fill="#C9A463"/></svg>
+      Sn00zly
+    </div>
+    <div class="eyebrow">Free Sleep Schedule Generator</div>
+    <h1>Where today's naps should land</h1>
+    <p class="lede">Four questions. We map the day from your baby's exact age in weeks and this morning's wake-up — a flexible starting point, not a strict schedule.</p>
+    <div class="trustline">
+      <span class="chip-trust">Built from pediatrician-reviewed guides</span>
+      <span class="chip-trust">No signup</span>
+      <span class="chip-trust">Free</span>
+    </div>
+  </header>
+
+  <form class="card" id="gen" autocomplete="off">
+    <div class="card-label">Tell us about your baby</div>
+    <div class="field-grid">
+      <div class="field">
+        <label for="babyName">Baby's first name</label>
+        <input type="text" id="babyName" value="Mila" placeholder="e.g. Mila" maxlength="18" required>
+      </div>
+      <div class="two-up">
+        <div class="field">
+          <label for="dob">Date of birth</label>
+          <input type="date" id="dob" required>
+        </div>
+        <div class="field">
+          <label for="wake">Woke up today at</label>
+          <input type="time" id="wake" value="06:45" required>
+        </div>
+      </div>
+      <div class="field">
+        <label id="strugLabel">Biggest struggle right now</label>
+        <div class="chips" role="group" aria-labelledby="strugLabel" id="strugChips">
+          <button type="button" class="chip" aria-pressed="true" data-k="short">Short naps</button>
+          <button type="button" class="chip" aria-pressed="false" data-k="bedtime">Bedtime battles</button>
+          <button type="button" class="chip" aria-pressed="false" data-k="night">Night wakings</button>
+          <button type="button" class="chip" aria-pressed="false" data-k="early">Early rising</button>
+        </div>
+        <span class="hint">Optional — it changes which tips you see, not the times.</span>
+      </div>
+      <button type="submit" class="btn">Build my schedule</button>
+      <p class="no-signup">No email needed. Your schedule appears right below.</p>
+    </div>
+  </form>
+
+  <section id="result" hidden aria-live="polite"></section>
+
+</div>
+
+<div class="notes-wrap">
+  <div class="wide">
+    <div class="notes-eyebrow">Beleške za build — ne vidi ih korisnik</div>
+    <h2>Šta je ovde stvarno, a šta tek treba da uradiš</h2>
+    <p class="sub">Sve satnice iznad su izračunate uživo u browseru — promeni datum rođenja ili vreme buđenja i ceo raspored se preračuna. To je isti motor koji bi išao u produkciju.</p>
+
+    <div class="notes-grid">
+      <div class="nc">
+        <h4>Izmene po primedbama Dr. Alexander</h4>
+        <ul>
+          <li>Framing: „A starting schedule", ne „personalized" — uz njenu disclaimer rečenicu doslovno</li>
+          <li>Sva vremena su prozori (±20 min); jedino jutarnje buđenje je označeno kao tačno, jer je jedino što roditelj stvarno zna</li>
+          <li>Bedtime je raspon, ne tačka</li>
+          <li>Izbačeno skriveno skraćivanje dremke — i skriveno nateravanje bedtime-a u „lep" prozor, što je bila ista greška sloj niže</li>
+          <li>Kad dan realno ispadne kasan, alat pokaže kasno vreme i kaže zašto</li>
+          <li>Catnap kod ranog buđenja je ponuđen kao predlog, ne kao činjenica</li>
+          <li>Dodata rečenica o bolesnim danima</li>
+        </ul>
+      </div>
+      <div class="nc warn">
+        <h4>Mora pre nego što ovo iko vidi</h4>
+        <ul>
+          <li>✓ Brojevi zamenjeni kanonskom tabelom iz Faze 0 — 29 od 30 konflikata rešeno</li>
+          <li>✓ Noćna hranjenja klinički potvrđena 30.08.2026</li>
+          <li>✓ Bedž u zaglavlju ispravljen na „Built from pediatrician-reviewed guides"</li>
+          <li><b>NE</b> koristiti formulaciju „pediatrician-reviewed engine" — recenzija pokriva sadržaj vodiča i noćna hranjenja, ne motor. Dozvoljeno: „Built from our pediatrician-reviewed guides"</li>
+          <li>C31 otvoren: Stage 1 ne navodi dnevni san za 0–3 meseca, motor koristi izvedene vrednosti</li>
+          <li>Pravni disclaimer proveren, safe-sleep teme ostaju van alata</li>
+          <li>Share kartica, jedinstveni URL-ovi, Klaviyo i programatske stranice i dalje postoje samo kao slika</li>
+        </ul>
+      </div>
+      <div class="nc">
+        <h4>Novo: „How did it actually go?"</h4>
+        <ul>
+          <li>Odgovor na ono što alat ne može da zna iz četiri polja — roditelj prijavi kad je dremka stvarno završena, ostatak dana se preračuna od tog broja</li>
+          <li>Isti motor, nova polazna tačka; tehnički skoro besplatno</li>
+          <li>Daje razlog za povratak na stranicu više puta dnevno — jedina retencija koju alat inače nema</li>
+          <li>Radi i kad je dremka bila kraća, ne samo duža</li>
+        </ul>
+      </div>
+      <div class="nc">
+        <h4>Namerno izostavljeno</h4>
+        <ul>
+          <li>Nalozi i registracija — svaki konkurent ih traži, ti ne</li>
+          <li>Tracker spavanja i hranjenja — Huckleberryjev teren, traži dnevnu naviku</li>
+          <li>AI chat — tek posle dokazanog share rate-a</li>
+          <li>Bilo kakav paywall na samom rezultatu</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ─── Canonical age bands · snoozly_canon.json v1.0 ─────────────────
+     Reconciled from the four stage guides (Faza 0, 30.08.2026).
+     Night-feed values clinically confirmed by Dr. L. Alexander, 30.08.2026.
+     Day sleep for 0–3 months is derived — see open item C31. */
+  var BANDS = [
+    {to:1, naps:6, wwMin:45, wwMax:60, day:450, feeds:[1,3], bed:["19:00","22:00"], total:"14–18h", label:"0–2 weeks", flex:1},
+    {to:3, naps:6, wwMin:45, wwMax:60, day:435, feeds:[1,3], bed:["19:00","22:00"], total:"14–17h", label:"2–4 weeks", flex:1},
+    {to:5, naps:5, wwMin:60, wwMax:75, day:420, feeds:[1,2], bed:["18:30","20:30"], total:"13–16h", label:"4–6 weeks", flex:1},
+    {to:7, naps:5, wwMin:75, wwMax:90, day:390, feeds:[1,2], bed:["18:30","20:00"], total:"13–16h", label:"6–8 weeks", flex:1},
+    {to:12, naps:4, wwMin:90, wwMax:120, day:195, feeds:[1,2], bed:["18:30","19:30"], total:"12–15h", label:"8–12 weeks"},
+    {to:17, naps:4, wwMin:90, wwMax:120, day:195, feeds:[1,1], bed:["18:30","19:30"], total:"12–14h", label:"4 months"},
+    {to:19, naps:4, wwMin:105, wwMax:120, day:185, feeds:[1,1], bed:["18:30","19:30"], total:"12–14h", label:"4.5 months"},
+    {to:23, naps:3, wwMin:120, wwMax:135, day:180, feeds:[0,1], bed:["18:30","19:30"], total:"12–14h", label:"5 months"},
+    {to:25, naps:3, wwMin:120, wwMax:135, day:180, feeds:[0,1], bed:["18:30","19:30"], total:"12–14h", label:"5.5 months"},
+    {to:26, naps:3, wwMin:135, wwMax:150, day:180, feeds:[0,1], bed:["18:00","19:30"], total:"11–14h", label:"6 months"},
+    {to:30, naps:3, wwMin:135, wwMax:155, day:165, feeds:[0,1], bed:["18:00","19:30"], total:"11–14h", label:"6–7 months"},
+    {to:34, naps:2, wwMin:150, wwMax:180, day:180, feeds:[0,1], bed:["18:00","19:30"], total:"11–14h", label:"7 months"},
+    {to:38, naps:2, wwMin:165, wwMax:180, day:180, feeds:[0,1], bed:["18:00","19:30"], total:"11–14h", label:"8 months"},
+    {to:43, naps:2, wwMin:180, wwMax:210, day:165, feeds:[0,1], bed:["18:30","19:30"], total:"11–13h", label:"9 months"},
+    {to:47, naps:2, wwMin:180, wwMax:210, day:165, feeds:[0,1], bed:["18:30","19:30"], total:"11–13h", label:"10 months"},
+    {to:51, naps:2, wwMin:180, wwMax:200, day:150, feeds:[0,0], bed:["18:30","19:30"], total:"11–13h", label:"11 months"},
+    {to:56, naps:2, wwMin:180, wwMax:210, day:150, feeds:[0,0], bed:["18:30","19:30"], total:"12–14h", label:"12 months"},
+    {to:65, naps:1, wwMin:240, wwMax:300, wwPair:[330,270], day:120, feeds:[0,0], bed:["19:00","19:30"], total:"12–13h", label:"13–15 months"},
+    {to:78, naps:1, wwMin:300, wwMax:360, wwPair:[345,255], day:120, feeds:[0,0], bed:["19:00","19:30"], total:"12–13h", label:"16–18 months"},
+    {to:91, naps:1, wwMin:330, wwMax:360, wwPair:[360,255], day:130, feeds:[0,0], bed:["19:00","20:00"], total:"11–13h", label:"19–21 months"},
+    {to:999, naps:1, wwMin:360, wwMax:390, wwPair:[375,255], day:135, feeds:[0,0], bed:["19:00","20:00"], total:"11–13h", label:"22–24 months"}
+  ];
+
+  var NAP_WEIGHTS = {1:[1],2:[1.06,0.94],3:[1.26,1.18,0.56],4:[1.2,1.14,0.96,0.7],5:[1.14,1.14,1.04,0.88,0.8],6:[1.1,1.1,1.05,0.95,0.9,0.9]};
+  /* Per-position caps: the last nap of a multi-nap day is a catnap, not a long nap. */
+  var NAP_CAP = {1:[150],2:[120,105],3:[120,120,45],4:[120,120,105,60],5:[120,120,120,90,60],6:[120,120,120,105,90,60]};
+  var NAP_MIN = {1:[60],2:[45,35],3:[45,40,25],4:[35,35,30,25],5:[30,30,30,25,25],6:[30,30,30,25,25,25]};
+
+  var AGE_NOTES = [
+    {from:0,  to:11, kind:"dyk",   t:"Newborn rhythms, not schedules",
+     b:"Below 12 weeks a baby's day rarely repeats. Treat every time below as a window of about 20 minutes either side, and follow sleepy cues over the clock."},
+    {from:14, to:20, kind:"alert", t:"4-month regression window",
+     b:"Around now sleep architecture matures permanently. Nights getting worse is a developmental signal, not a setback — but it does mean the settling approach that worked before may need to change."},
+    {from:26, to:34, kind:"dyk",   t:"The 3-to-2 nap wobble",
+     b:"Third naps get harder to sell around this age. A day where the third nap refuses to happen is normal; an early bedtime is the right response to it."},
+    {from:37, to:46, kind:"alert", t:"8–10 month regression window",
+     b:"Crawling, pulling up and separation awareness all land together. Practising new skills in the crib at 2am is developmental, not a sleep problem."},
+    {from:60, to:76, kind:"dyk",   t:"The 2-to-1 nap transition",
+     b:"This is the longest and messiest transition. Most babies need 4–8 weeks of alternating one-nap and two-nap days before the single nap holds."}
+  ];
+
+  var STRUGGLE_TIPS = {
+    short:{t:"About those short naps",b:"A nap under 45 minutes usually means the wake window before it was slightly off — most often too short in the morning, too long by afternoon. Try shifting the first wake window by 10 minutes for three days before changing anything else."},
+    bedtime:{t:"About bedtime battles",b:"The last wake window of the day is the one that decides bedtime, and it's the one parents most often get wrong. Aim for the longer end of the range before bed, and keep the routine to the same 20 minutes every night."},
+    night:{t:"About night wakings",b:"Look at the total day sleep number first. When day sleep runs over the target, night sleep fragments — and it looks like a night problem when it started in the afternoon."},
+    early:{t:"About early rising",b:"Wake before 6am is usually one of three things: bedtime too late, last nap ending too late, or light in the room. Rule out light first — it costs nothing."}
+  };
+
+  /* ─── Helpers ─────────────────────────────────────────── */
+  function parseHM(s){var p=s.split(":");return (+p[0])*60+(+p[1]);}
+  function fmt(mins){
+    mins=((Math.round(mins/5)*5)%1440+1440)%1440;
+    var h=Math.floor(mins/60),m=mins%60;
+    var ap=h>=12?"pm":"am",hh=h%12;if(hh===0)hh=12;
+    return hh+":"+(m<10?"0":"")+m+" "+ap;
+  }
+  function dur(mins){
+    mins=Math.round(mins/5)*5;
+    var h=Math.floor(mins/60),m=mins%60;
+    if(h===0)return m+" min";
+    if(m===0)return h+" hr";
+    return h+" hr "+m+" min";
+  }
+  function weeksOld(dobStr){
+    var dob=new Date(dobStr+"T00:00:00");
+    var now=new Date();now.setHours(0,0,0,0);
+    return Math.max(0,Math.floor((now-dob)/(1000*60*60*24*7)));
+  }
+  function bandFor(w){for(var i=0;i<BANDS.length;i++){if(w<=BANDS[i].to)return BANDS[i];}return BANDS[BANDS.length-1];}
+  function bandIndex(w){for(var i=0;i<BANDS.length;i++){if(w<=BANDS[i].to)return i;}return BANDS.length-1;}
+  function ageLabel(w){
+    if(w<14)return w+(w===1?" week":" weeks")+" old";
+    var m=Math.floor(w/4.345);
+    return m+(m===1?" month":" months")+" old";
+  }
+  function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+
+  /* ─── The engine ──────────────────────────────────────── */
+  /* anchor = {index:i, end:minutes} — a nap the parent reports actually ended
+     at a given time. Everything after it is rebuilt from that real number. */
+  function buildSchedule(weeks,wakeMin,anchor){
+    var b=bandFor(weeks), n=b.naps;
+    var ww=[];
+    if(b.wwPair){
+      /* One-nap toddlers: the pre-nap window is the longest of the day and the
+         pre-bed one is shorter. The infant rule (windows grow through the day)
+         inverts here — taken from the guides' own one-nap sample schedules. */
+      ww=b.wwPair.slice();
+    }else{
+      for(var i=0;i<=n;i++){
+        ww.push(Math.round((b.wwMin+(b.wwMax-b.wwMin)*(n===0?1:i/n))/5)*5);
+      }
+    }
+    var w=NAP_WEIGHTS[n]||[1], sum=w.reduce(function(a,c){return a+c;},0);
+    var cap=NAP_CAP[n]||[135], mn=NAP_MIN[n]||[30];
+    var napLen=w.map(function(x,i){
+      return Math.min(cap[i],Math.max(mn[i],Math.round(b.day*(x/sum)/5)*5));
+    });
+
+    var bedMin=parseHM(b.bed[0]), bedMax=parseHM(b.bed[1]);
+
+    function run(lens){
+      var t=wakeMin, items=[];
+      for(var i=0;i<lens.length;i++){
+        var s=t+ww[Math.min(i,n)], e=s+lens[i], real=false;
+        if(anchor && i===anchor.index && anchor.end>s+10){ e=anchor.end; real=true; }
+        items.push({start:s,end:e,len:e-s,bridge:i>=n,actual:real});
+        t=e;
+      }
+      return {items:items,raw:t+ww[n]};
+    }
+
+    var out=run(napLen), bridged=false;
+
+    /* Early riser: the usual naps leave too long a stretch before bed.
+       A short bridging catnap is offered as a suggestion, not asserted. */
+    if(bedMin-out.raw>75 && n>0){
+      napLen=napLen.concat([30]);
+      bridged=true;
+      out=run(napLen);
+    }
+
+    /* No silent nap-trimming, and no silent clamping either. When the day
+       genuinely runs late we show the late time and say so — forcing the
+       number back into the ideal window is the same dishonesty one layer up. */
+    var raw=out.raw;
+    var lastEnd=out.items.length?out.items[out.items.length-1].end:wakeMin;
+
+    /* Rhythm mode. Under ~8 weeks the guides are explicit that there is no
+       fixed bedtime — sleep follows feeds around the clock — and a late wake
+       makes a full clock timetable arithmetically impossible at any age.
+       In both cases we show the rhythm and stop, rather than inventing a
+       bedtime the day cannot actually reach. */
+    var rhythm = !!b.flex || raw>1380;
+    if(rhythm){
+      var budget=out.items.reduce(function(a,c){return a+c.len;},0);
+      /* Show only the cycles that fall inside today; the note carries the rest. */
+      out.items = out.items.filter(function(it){ return it.end<1410; });
+      return {band:b,realNaps:n,bridged:bridged,late:false,rhythm:true,ww:ww,
+              items:out.items,raw:raw,bedLow:null,bedHigh:null,
+              daySleep:budget,
+              anchored:!!(anchor&&out.items[anchor.index]&&out.items[anchor.index].actual)};
+    }
+
+    var late=raw>bedMax;
+    var bedLow,bedHigh;
+    if(late){
+      bedLow=raw; bedHigh=raw+30;
+    }else{
+      bedLow=Math.max(bedMin,raw);
+      bedHigh=Math.min(bedMax,bedLow+45);
+      if(bedHigh-bedLow<20){ bedHigh=bedLow+20; }
+    }
+    if(bedLow<lastEnd+20){ bedLow=lastEnd+20; }
+    if(bedHigh<bedLow+20){ bedHigh=bedLow+30; }
+    bedHigh=Math.min(bedHigh,1410); bedLow=Math.min(bedLow,1380);
+
+    var daySleep=out.items.reduce(function(a,c){return a+c.len;},0);
+
+    return {band:b,realNaps:n,bridged:bridged,late:late,ww:ww,items:out.items,
+            raw:raw,bedLow:bedLow,bedHigh:bedHigh,daySleep:daySleep,
+            anchored:!!(anchor&&out.items[anchor.index]&&out.items[anchor.index].actual)};
+  }
+
+  function nextTransition(weeks){
+    var idx=bandIndex(weeks), cur=BANDS[idx].naps;
+    for(var i=idx+1;i<BANDS.length;i++){
+      if(BANDS[i].naps<cur){
+        var wk=Math.max(1,BANDS[i-1].to-weeks+1);
+        return {naps:BANDS[i].naps,from:cur,weeks:wk};
+      }
+    }
+    return null;
+  }
+
+  /* ─── Render ──────────────────────────────────────────── */
+  function rangeStr(a,b){
+    var A=fmt(a),B=fmt(b);
+    return (A.slice(-2)===B.slice(-2)) ? A.slice(0,-2).trim()+"–"+B : A+" – "+B;
+  }
+
+  function render(name,weeks,wakeMin,struggle,anchor){
+    var s=buildSchedule(weeks,wakeMin,anchor), b=s.band;
+    var poss=/[sxz]$/i.test(name)?name+"'":name+"'s";
+    var h="";
+
+    h+='<div class="result-head reveal">'+
+       '<span class="age-pill">'+esc(ageLabel(weeks))+'</span>'+
+       '<h2>A starting schedule for '+esc(name)+'</h2>'+
+       '<p class="lede">Built from an age of '+weeks+' weeks and this morning’s '+fmt(wakeMin)+' wake-up.</p>'+
+       '<p class="honest">Use this as a flexible starting point, not a strict schedule. Follow your baby’s individual sleep cues.</p>'+
+       '</div>';
+
+    h+='<div class="tiles reveal">'+
+       '<div class="tile"><span class="tv">'+s.items.length+'</span><span class="tl">Naps</span></div>'+
+       '<div class="tile"><span class="tv">'+(Math.round(s.daySleep/6)/10)+'h</span><span class="tl">Target day sleep</span></div>'+
+       (s.rhythm
+         ? '<div class="tile"><span class="tv sm">no fixed<br>bedtime</span><span class="tl">Bedtime</span></div>'
+         : '<div class="tile"><span class="tv sm">'+rangeStr(s.bedLow,s.bedHigh)+'</span><span class="tl">Bedtime window</span></div>')+
+       '<div class="tile"><span class="tv">'+b.total+'</span><span class="tl">Total / 24h</span></div>'+
+       '</div>';
+
+    /* Timeline. Only the morning wake-up is an exact time — it is the one
+       thing the parent actually told us. Everything downstream is a window. */
+    h+='<div class="card reveal"><div class="card-label">'+esc(name)+'’s day</div>';
+    if(s.anchored){h+='<span class="anchor-on">Rebuilt from a real nap you reported</span>';}
+    h+='<div class="tl-list">';
+    h+=row(fmt(wakeMin),"awake","Wake for the day","Wake window ~"+dur(s.ww[0]),true);
+    for(var i=0;i<s.items.length;i++){
+      var it=s.items[i];
+      var title=it.bridge?"Bridging catnap (suggested)":"Nap "+(i+1);
+      h+=row(rangeStr(it.start,it.start+20),"sleep",title,(it.actual?"You reported ":"About ")+dur(it.len),false);
+      var nextWW=s.ww[Math.min(i+1,s.realNaps)];
+      var isLast=(i===s.items.length-1);
+      h+=row(it.actual?fmt(it.end):rangeStr(it.end,it.end+20),"awake","Awake",
+             isLast?"Last wake window before bed":"Wake window ~"+dur(nextWW),it.actual);
+    }
+    if(s.rhythm){
+      h+=row("…","bed","The rhythm continues","Feed · short wake window · sleep — around the clock",false);
+    }else{
+      h+=row(rangeStr(s.bedLow,s.bedHigh),"bed","Bedtime window","Depends on how naps actually run",false);
+    }
+    h+='</div>';
+
+    if(s.rhythm){
+      h+='<div class="note note-expert"><strong>No bedtime shown — and that is deliberate</strong><p>'+
+         (b.flex?'At this age there is no fixed bedtime yet. Sleep follows feeds around the clock, and the day does not reset in the evening the way it will later.'
+                :'With a wake-up this late, a full day of naps cannot fit before a reasonable bedtime. Rather than invent one, the schedule shows the rhythm and stops.')+
+         ' The times above are the first cycles from '+fmt(wakeMin)+'; after that, keep repeating the pattern and follow sleepy cues.</p></div>';
+    }
+
+    if(s.late){
+      h+='<div class="note note-expert"><strong>Today the arithmetic runs late</strong><p>If the naps go the full length above, bedtime drifts past the age-appropriate window. That is the day to cap the last nap rather than let it run — an overlong afternoon nap is the most common cause of a hard bedtime.</p></div>';
+    }
+    if(s.bridged){
+      h+='<div class="note note-expert"><strong>Why a catnap is suggested</strong><p>'+esc(name)+' woke early enough that '+s.realNaps+' naps leave a very long stretch before bed. Many babies this age need a short bridging catnap on days like this. It is a suggestion for an early start, not a fixed part of the day.</p></div>';
+    }
+
+    if(b.feeds[1]>0){
+      h+='<div class="note note-dyk"><strong>Night feeds at this age</strong><p>'+
+         (b.feeds[0]===b.feeds[1]?b.feeds[0]:b.feeds[0]+"–"+b.feeds[1])+
+         ' night feeds is within the normal range for '+esc(ageLabel(weeks))+'. Anything in that band is a feeding pattern, not a sleep problem.</p></div>';
+    }
+    h+='</div>';
+
+    /* Recalculate from a real nap — the honest answer to everything the
+       tool cannot know from four inputs. */
+    var opts="";
+    for(var q=0;q<s.items.length;q++){
+      opts+='<option value="'+q+'"'+((anchor&&anchor.index===q)?" selected":"")+'>'+
+            (s.items[q].bridge?"Catnap":"Nap "+(q+1))+'</option>';
+    }
+    var defEnd=s.items.length?s.items[0].end:wakeMin+120;
+    h+='<div class="card reveal"><div class="card-label">How did it actually go?</div>'+
+       '<p style="font-size:13.5px;color:var(--ink-soft)">The times above assume average-length naps. Real naps are not average. Tell us when one actually ended and the rest of the day is rebuilt from that number.</p>'+
+       '<div class="recalc">'+
+       '<select id="anchorNap" aria-label="Which nap">'+opts+'</select>'+
+       '<input type="time" id="anchorEnd" aria-label="Ended at" value="'+String(Math.floor(defEnd/60)).padStart(2,"0")+':'+String(defEnd%60).padStart(2,"0")+'">'+
+       '</div>'+
+       '<div class="btn-row" style="margin-top:10px">'+
+       '<button type="button" class="btn" id="recalcBtn">Rebuild the rest of the day</button>'+
+       (anchor?'<button type="button" class="btn btn-ghost" id="resetBtn">Back to the estimate</button>':'')+
+       '</div></div>';
+
+    /* Coming next */
+    var nt=nextTransition(weeks);
+    h+='<div class="card reveal"><div class="card-label">What comes next</div>';
+    if(nt){
+      h+='<div class="note note-next"><strong>'+esc(name)+' will likely drop to '+nt.naps+' nap'+(nt.naps>1?"s":"")+'</strong>'+
+         '<p>Roughly '+nt.weeks+' week'+(nt.weeks===1?"":"s")+' from now, going from '+nt.from+' naps to '+nt.naps+'. '+
+         'The signs come before the date: naps refused at the same time for a week or more, and bedtime drifting later.</p></div>';
+    }else{
+      h+='<div class="note note-next"><strong>One nap holds from here</strong>'+
+         '<p>No more nap transitions ahead — the single midday nap typically lasts into the third year, then shortens before it disappears.</p></div>';
+    }
+
+    var added=false;
+    for(var j=0;j<AGE_NOTES.length;j++){
+      var an=AGE_NOTES[j];
+      if(weeks>=an.from&&weeks<=an.to){
+        h+='<div class="note note-'+(an.kind==="alert"?"alert":"dyk")+'"><strong>'+esc(an.t)+'</strong><p>'+esc(an.b)+'</p></div>';
+        added=true;
+      }
+    }
+    if(struggle&&STRUGGLE_TIPS[struggle]){
+      var st=STRUGGLE_TIPS[struggle];
+      h+='<div class="note note-expert"><strong>Sn00zly Expert Tip · '+esc(st.t)+'</strong><p>'+esc(st.b)+'</p></div>';
+      added=true;
+    }
+    if(!added){h+='<div class="note note-dyk"><strong>Watch the baby, not the clock</strong><p>These windows are a starting frame. Sleepy cues beat the schedule every time in the first year.</p></div>';}
+    h+='<div class="note note-dyk"><strong>And on sick days, ignore all of it</strong><p>A baby who is unwell does not follow a schedule, and should not be made to. Extra sleep on those days is the point, not a setback.</p></div>';
+    h+='</div>';
+
+    /* Share */
+    var rows="";
+    rows+='<div class="sc-row"><span>Wake</span><span>'+fmt(wakeMin)+'</span></div>';
+    for(var k=0;k<s.items.length;k++){
+      rows+='<div class="sc-row"><span>'+(s.items[k].bridge?"Catnap":"Nap "+(k+1))+'</span><span>'+fmt(s.items[k].start)+' – '+fmt(s.items[k].end)+'</span></div>';
+    }
+    rows+='<div class="sc-row"><span>Bedtime</span><span>'+rangeStr(s.bedLow,s.bedHigh)+'</span></div>';
+
+    h+='<div class="card reveal"><div class="card-label">Save it · share it</div>'+
+       '<div class="share-stage"><div class="share-card">'+
+       '<div class="sc-brand">Sn00zly</div>'+
+       '<div class="sc-name">'+esc(poss)+'<br>starting schedule</div>'+
+       '<div class="sc-age">'+esc(ageLabel(weeks))+' · '+s.items.length+' naps</div>'+
+       '<div class="sc-rule"></div>'+
+       '<div class="sc-rows">'+rows+'</div>'+
+       '<div class="sc-foot">A flexible starting point · sn00zly.com</div>'+
+       '</div></div>'+
+       '<div class="btn-row">'+
+       '<button type="button" class="btn btn-ghost" data-demo="Ovde bi se snimila PNG kartica 1080×1920">Save as image</button>'+
+       '<button type="button" class="btn btn-ghost" data-demo="Ovde bi se kopirao link sn00zly.com/schedule/…">Share link</button>'+
+       '</div>'+
+       '<p class="no-signup">Every shared schedule carries the baby’s name and your brand. That is the traffic engine.</p>'+
+       '</div>';
+
+    h+='<div class="capture reveal" style="margin-top:16px">'+
+       '<h3>Want '+esc(poss)+' schedule as a printable PDF?</h3>'+
+       '<p>We’ll also email you the day the wake windows change — and again before every nap transition, until '+esc(name)+' is two.</p>'+
+       '<div class="field"><input type="email" placeholder="you@email.com" aria-label="Email address"></div>'+
+       '<div style="margin-top:10px"><button type="button" class="btn" data-demo="Ovde ide Klaviyo API poziv + start sekvence po uzrastu">Email me the PDF</button></div>'+
+       '<p class="no-signup">One email per milestone. Unsubscribe any time.</p>'+
+       '</div>';
+
+    h+='<div class="upsell reveal" style="margin-top:16px">'+
+       '<span class="tag">The next step</span>'+
+       '<h3>The schedule says roughly when. The guide says how.</h3>'+
+       '<p>Knowing the window is the easy half. If '+esc(name)+' fights the last nap, or the window keeps sliding, that is what the '+esc(b.label)+' guide is for — settling, wake-window troubleshooting, and the full nap-transition protocol, reviewed by a pediatrician.</p>'+
+       '<div class="price"><span class="p">$49</span><span class="was">$79</span></div>'+
+       '<button type="button" class="btn btn-gold" data-demo="Vodi na postojeću Shopify Stage Bundle stranicu">See the '+esc(b.label)+' bundle</button>'+
+       '</div>';
+
+    h+='<p class="disclaimer">Sn00zly schedules are general educational guidance reviewed against AAP safe-sleep principles. They are a flexible starting point based on age and morning wake time — not medical advice, and not a substitute for your pediatrician.</p>';
+
+    return h;
+  }
+
+  function row(timeStr,kind,title,sub,exact){
+    return '<div class="tl-row"><div class="tl-time">'+timeStr+
+           (exact?'<span class="exact">exact</span>':'')+'</div>'+
+           '<div class="tl-body"><span class="tl-dot"></span>'+
+           '<div class="block '+kind+'"><span class="bt">'+title+'</span><span class="bs">'+sub+'</span></div>'+
+           '</div></div>';
+  }
+
+  /* ─── Wiring ──────────────────────────────────────────── */
+  var form=document.getElementById("gen");
+  var out=document.getElementById("result");
+  var chips=document.getElementById("strugChips");
+  var struggle="short";
+  var anchor=null;
+
+  chips.addEventListener("click",function(e){
+    var btn=e.target.closest(".chip");if(!btn)return;
+    var on=btn.getAttribute("aria-pressed")==="true";
+    Array.prototype.forEach.call(chips.querySelectorAll(".chip"),function(c){c.setAttribute("aria-pressed","false");});
+    if(!on){btn.setAttribute("aria-pressed","true");struggle=btn.dataset.k;}else{struggle=null;}
+  });
+
+  out.addEventListener("click",function(e){
+    if(e.target.closest("#recalcBtn")){
+      var sel=document.getElementById("anchorNap"), tm=document.getElementById("anchorEnd");
+      if(sel&&tm&&tm.value){ anchor={index:+sel.value,end:parseHM(tm.value)}; go(false); }
+      return;
+    }
+    if(e.target.closest("#resetBtn")){ anchor=null; go(false); return; }
+    var b=e.target.closest("[data-demo]");if(!b)return;
+    var old=b.textContent;
+    b.textContent=b.dataset.demo;
+    setTimeout(function(){b.textContent=old;},2200);
+  });
+
+  function go(scroll){
+    var name=(document.getElementById("babyName").value||"Your baby").trim();
+    var dob=document.getElementById("dob").value;
+    var wake=document.getElementById("wake").value;
+    if(!dob||!wake)return;
+    var w=weeksOld(dob);
+    if(w>112){
+      out.hidden=false;
+      out.innerHTML='<div class="card reveal" style="margin-top:24px"><div class="note note-dyk"><strong>Past our range</strong><p>Sn00zly schedules cover birth to 24 months. '+esc(name)+' has grown out of them — which is the good kind of problem.</p></div></div>';
+      return;
+    }
+    out.hidden=false;
+    out.innerHTML=render(name,w,parseHM(wake),struggle,anchor);
+    if(scroll){out.scrollIntoView({behavior:"smooth",block:"start"});}
+  }
+
+  form.addEventListener("submit",function(e){e.preventDefault();anchor=null;go(true);});
+
+  /* Prefill with a ~19-week-old so the page opens on a real result. */
+  var d=new Date();d.setDate(d.getDate()-133);
+  document.getElementById("dob").value=d.toISOString().slice(0,10);
+  go(false);
+})();
+</script>
