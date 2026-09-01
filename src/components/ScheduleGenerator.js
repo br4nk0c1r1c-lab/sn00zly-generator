@@ -125,6 +125,73 @@ function SaveImageButton({ name, dob, wake, struggle }) {
   );
 }
 
+function PdfCaptureCard({ name, dob }) {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState("idle");
+  const timeoutRef = useRef(null);
+
+  useEffect(() => () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+  }, []);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (status === "loading") return;
+    setStatus("loading");
+    try {
+      const res = await fetch("/api/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, name, dob }),
+      });
+      if (!res.ok) throw new Error("request failed");
+      trackEvent("email_capture");
+      setStatus("done");
+    } catch {
+      setStatus("error");
+      timeoutRef.current = setTimeout(() => setStatus("idle"), 2200);
+    }
+  }
+
+  if (status === "done") {
+    return (
+      <div className="capture reveal" style={{ marginTop: 16 }}>
+        <h3>Check your inbox</h3>
+        <p>
+          We just sent {poss(name)} wake window cheat sheet to {email}.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="capture reveal" style={{ marginTop: 16 }}>
+      <h3>Want {poss(name)} schedule as a printable PDF?</h3>
+      <p>
+        We’ll also email you the day the wake windows change — and again before every nap transition, until {name} is two.
+      </p>
+      <form onSubmit={handleSubmit}>
+        <div className="field">
+          <input
+            type="email"
+            placeholder="you@email.com"
+            aria-label="Email address"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </div>
+        <div style={{ marginTop: 10 }}>
+          <button type="submit" className="btn" disabled={status === "loading"}>
+            {status === "error" ? "Couldn't send — try again" : status === "loading" ? "Sending…" : "Email me the PDF"}
+          </button>
+        </div>
+      </form>
+      <p className="no-signup">One email per milestone. Unsubscribe any time.</p>
+    </div>
+  );
+}
+
 function TimelineRow({ timeStr, kind, title, sub, exact }) {
   return (
     <div className="tl-row">
@@ -430,21 +497,7 @@ function ScheduleResult({ name, dob, wake, weeks, wakeMin, struggle, anchor, onR
         <p className="no-signup">Every shared schedule carries the baby’s name and your brand. That is the traffic engine.</p>
       </div>
 
-      <div className="capture reveal" style={{ marginTop: 16 }}>
-        <h3>Want {poss(name)} schedule as a printable PDF?</h3>
-        <p>
-          We’ll also email you the day the wake windows change — and again before every nap transition, until {name} is two.
-        </p>
-        <div className="field">
-          <input type="email" placeholder="you@email.com" aria-label="Email address" />
-        </div>
-        <div style={{ marginTop: 10 }}>
-          <DemoButton className="btn" demoText="Ovde ide Klaviyo API poziv + start sekvence po uzrastu">
-            Email me the PDF
-          </DemoButton>
-        </div>
-        <p className="no-signup">One email per milestone. Unsubscribe any time.</p>
-      </div>
+      <PdfCaptureCard name={name} dob={dob} />
 
       <div className="upsell reveal" style={{ marginTop: 16 }}>
         <span className="tag">The next step</span>
