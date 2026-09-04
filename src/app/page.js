@@ -61,9 +61,9 @@ function ReviewsCard() {
       <div className="side-card-label">What parents say</div>
       {/* Judge.me's live widget needs their paid cross-platform plan
           (the Shopify Liquid snippet only resolves inside a Shopify
-          theme). Until then, this rotates static screenshots of real
-          reviews also shown on sn00zly.com — see
-          public/reviews/README.md to swap in the real images. */}
+          theme). Until then, this rotates real reviews transcribed
+          from the live Judge.me widget on sn00zly.com — see
+          src/components/ReviewCarousel.js to update the quotes. */}
       <ReviewCarousel />
     </div>
   );
