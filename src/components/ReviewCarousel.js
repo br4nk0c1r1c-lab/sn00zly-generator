@@ -15,7 +15,7 @@ const TOTAL_REVIEW_COUNT = 8;
 const REVIEWS = [
   {
     quote:
-      "As a mom of a 5 months old, I was compleatly exausted and overwhelmed by the sleep struggles we were going through. This guide made me feel like I wasn't alone. It helped me understand my baby's sleep regression, gave me gentle, practical advic…",
+      "As a mom of a 5 months old, I was compleatly exausted and overwhelmed by the sleep struggles we were going through. This guide made me feel like I wasn't alone. It helped me understand my baby's sleep regression, gave me gentle, practical advice that actually made a difference. Highly recommand to any parent going through this stage! 💕",
     author: "Misha C.",
     guide: "Baby Sleep Guide 4–6 Months",
   },
@@ -27,7 +27,7 @@ const REVIEWS = [
   },
   {
     quote:
-      "The Sn00zly Newborn Sleep Guide 0–3 Months is SO comprehensive! I love that it covers more than just sleep—it also gives helpful wake window recommendations, which made it so much easier to understand when my baby was ready for sleep. It'…",
+      "The Sn00zly Newborn Sleep Guide 0–3 Months is SO comprehensive! I love that it covers more than just sleep—it also gives helpful wake window recommendations, which made it so much easier to understand when my baby was ready for sleep. It's an incredibly helpful resource for navigating those first few months and bringing a little more structure and confidence to our days.",
     author: "Lynn S.",
     guide: "Newborn Sleep Guide 0–3 Months",
   },
