@@ -4,6 +4,11 @@ import { useEffect, useRef, useState } from "react";
 
 const ROTATE_MS = 5000;
 
+// Matches the total rating count on the live Judge.me widget — some of
+// those 8 reviews are star-only with no written quote, so this can be
+// higher than REVIEWS.length below.
+const TOTAL_REVIEW_COUNT = 8;
+
 // Judge.me stays a Shopify-only widget until the paid cross-platform plan is
 // active. Until then these are real reviews transcribed verbatim from the
 // live Judge.me widget on sn00zly.com, rotated locally instead of pulled live.
@@ -59,7 +64,7 @@ export default function ReviewCarousel() {
         <h3>Reviews</h3>
         <div className="review-rating-row">
           <span className="review-stars" aria-hidden="true">★★★★★</span>
-          <span>5.00 ({REVIEWS.length})</span>
+          <span>5.00 ({TOTAL_REVIEW_COUNT})</span>
           <span className="review-verified">✓ Verified</span>
         </div>
       </div>
