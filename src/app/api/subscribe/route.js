@@ -1,17 +1,10 @@
 import { NextResponse } from "next/server";
 import { weeksOld } from "@/lib/schedule-engine";
+import { bundleForWeeks } from "@/lib/bundles";
 
 const KLAVIYO_API_BASE = "https://a.klaviyo.com/api";
 const KLAVIYO_REVISION = "2024-10-15";
 const FREE_GUIDE_LIST_ID = "SFCu7v";
-
-function ageRangeFromWeeks(weeks) {
-  const months = weeks / 4.345;
-  if (months < 4) return "0-3 months";
-  if (months < 7) return "4-6 months";
-  if (months < 13) return "7-12 months";
-  return "12-24 months";
-}
 
 function klaviyoHeaders() {
   return {
@@ -115,7 +108,7 @@ export async function POST(request) {
   }
 
   const babyName = typeof name === "string" && name.trim() ? name.trim() : "your baby";
-  const ageRange = ageRangeFromWeeks(weeksOld(dob));
+  const ageRange = bundleForWeeks(weeksOld(dob)).range;
 
   try {
     await upsertProfile({ email, babyName, dob, ageRange });

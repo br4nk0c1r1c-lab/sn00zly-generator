@@ -272,6 +272,8 @@ input::placeholder{color:var(--ink-muted)}
   background:var(--navy);color:#FBF7F0;
   transition:transform .14s ease,box-shadow .14s ease;
   box-shadow:0 4px 14px rgba(47,79,127,.22);
+  display:inline-flex;align-items:center;justify-content:center;
+  text-decoration:none;box-sizing:border-box;
 }
 :root[data-theme="dark"] .btn:not(.btn-ghost):not(.btn-gold),
 :root:not([data-theme="light"]) .btn:not(.btn-ghost):not(.btn-gold){color:#0E1727}

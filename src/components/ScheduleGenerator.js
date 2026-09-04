@@ -13,6 +13,7 @@ import {
   weeksOld,
 } from "@/lib/schedule-engine";
 import { poss, rangeStr } from "@/lib/schedule-format";
+import { bundleForWeeks } from "@/lib/bundles";
 import { buildShareQuery } from "@/lib/share-params";
 import { trackEvent } from "@/lib/analytics";
 import { BASE_PATH } from "@/lib/base-path";
@@ -28,28 +29,6 @@ function toHHMM(mins) {
   const h = Math.floor(mins / 60);
   const m = mins % 60;
   return String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0");
-}
-
-function DemoButton({ demoText, className, children, onClick }) {
-  const [flash, setFlash] = useState(null);
-  const timeoutRef = useRef(null);
-
-  useEffect(() => () => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-  }, []);
-
-  function handleClick() {
-    onClick?.();
-    setFlash(demoText);
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => setFlash(null), 2200);
-  }
-
-  return (
-    <button type="button" className={className} onClick={handleClick}>
-      {flash ?? children}
-    </button>
-  );
 }
 
 function ShareLinkButton({ name, dob, wake, struggle }) {
@@ -231,6 +210,7 @@ function ScheduleResult({ name, dob, wake, weeks, wakeMin, struggle, anchor, onR
   const ageNotes = AGE_NOTES.filter((an) => weeks >= an.from && weeks <= an.to);
   const struggleTip = struggle ? STRUGGLE_TIPS[struggle] : null;
   const hasComingNextNote = ageNotes.length > 0 || !!struggleTip;
+  const bundle = bundleForWeeks(weeks);
 
   const selectRef = useRef(null);
   const endRef = useRef(null);
@@ -506,16 +486,18 @@ function ScheduleResult({ name, dob, wake, weeks, wakeMin, struggle, anchor, onR
           Knowing the window is the easy half. If {name} fights the last nap, or the window keeps sliding, that is what the {b.label} guide is for — settling, wake-window troubleshooting, and the full nap-transition protocol, reviewed by a pediatrician.
         </p>
         <div className="price">
-          <span className="p">$49</span>
-          <span className="was">$79</span>
+          <span className="p">${bundle.price}</span>
+          <span className="was">${bundle.wasPrice}</span>
         </div>
-        <DemoButton
+        <a
           className="btn btn-gold"
-          demoText="Vodi na postojeću Shopify Stage Bundle stranicu"
-          onClick={() => trackEvent("product_click", { band: b.label })}
+          href={bundle.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => trackEvent("product_click", { band: b.label, bundle: bundle.range })}
         >
-          See the {b.label} bundle
-        </DemoButton>
+          See the {bundle.displayRange} bundle
+        </a>
       </div>
 
       <p className="disclaimer">
