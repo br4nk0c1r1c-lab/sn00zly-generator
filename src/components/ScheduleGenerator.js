@@ -605,7 +605,7 @@ export default function ScheduleGenerator({ initial }) {
               id="babyName"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Mila"
+              placeholder="e.g. Sarah"
               maxLength={18}
               required
             />
