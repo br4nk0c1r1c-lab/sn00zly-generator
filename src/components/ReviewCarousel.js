@@ -61,7 +61,6 @@ export default function ReviewCarousel() {
       onMouseLeave={() => setPaused(false)}
     >
       <div className="review-carousel-header">
-        <h3>Reviews</h3>
         <div className="review-rating-row">
           <span className="review-stars" aria-hidden="true">★★★★★</span>
           <span>5.00 ({TOTAL_REVIEW_COUNT})</span>

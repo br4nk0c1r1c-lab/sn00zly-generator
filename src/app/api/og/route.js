@@ -1,8 +1,8 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
-import { buildSchedule, ageLabel, fmt, parseHM, weeksOld } from "@/lib/schedule-engine";
-import { poss, rangeStr } from "@/lib/schedule-format";
+import { buildSchedule, fmt, parseHM, weeksOld } from "@/lib/schedule-engine";
+import { monthsAndWeeks, poss, rangeStr } from "@/lib/schedule-format";
 import { parseShareSearchParams } from "@/lib/share-params";
 
 const FORMATS = {
@@ -83,7 +83,7 @@ function PortraitCard({ name, weeks, wakeMin, s }) {
         <span>starting schedule</span>
       </div>
       <div style={{ fontSize: 30, color: "#E7D6AE", marginTop: 12 }}>
-        {`${ageLabel(weeks)} · ${s.items.length} naps`}
+        {`${monthsAndWeeks(weeks)} · ${s.items.length} naps`}
       </div>
       <div style={{ width: 70, height: 5, background: "#C9A463", borderRadius: 3, margin: "36px 0 34px" }} />
       <div style={{ display: "flex", flexDirection: "column", gap: 20, flex: 1 }}>
@@ -124,7 +124,7 @@ function LandscapeCard({ name, weeks, wakeMin, s }) {
           <span>{`for ${name}`}</span>
         </div>
         <div style={{ fontSize: 24, color: "#E7D6AE", marginTop: 14 }}>
-          {`${ageLabel(weeks)} · ${s.items.length} naps`}
+          {`${monthsAndWeeks(weeks)} · ${s.items.length} naps`}
         </div>
       </div>
       <div style={{ width: 2, background: "rgba(247,241,232,0.18)", margin: "0 44px" }} />

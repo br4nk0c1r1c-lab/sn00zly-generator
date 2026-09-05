@@ -21,6 +21,12 @@ export async function generateMetadata({ searchParams }) {
   return {
     title,
     description,
+    // Shared links carry the baby's name and birth date in the URL so the
+    // schedule can recompute as the baby ages. Keeping those out of search
+    // results and always pointing search engines back at the plain
+    // generator avoids indexing personal data.
+    robots: hasShare ? { index: false, follow: true } : undefined,
+    alternates: { canonical: "/" },
     openGraph: {
       title,
       description,

@@ -12,7 +12,7 @@ import {
   parseHM,
   weeksOld,
 } from "@/lib/schedule-engine";
-import { poss, rangeStr } from "@/lib/schedule-format";
+import { monthsAndWeeks, poss, rangeStr } from "@/lib/schedule-format";
 import { bundleForWeeks } from "@/lib/bundles";
 import { buildShareQuery } from "@/lib/share-params";
 import { trackEvent } from "@/lib/analytics";
@@ -321,6 +321,12 @@ function ScheduleResult({ name, dob, wake, weeks, wakeMin, struggle, anchor, onR
           )}
         </div>
 
+        {!s.rhythm ? (
+          <p className="honest">
+            Treat each time as a ±15 minute guide. Nap lengths naturally vary — follow your baby’s cues.
+          </p>
+        ) : null}
+
         {s.rhythm ? (
           <div className="note note-expert">
             <strong>No bedtime shown — and that is deliberate</strong>
@@ -446,7 +452,7 @@ function ScheduleResult({ name, dob, wake, weeks, wakeMin, struggle, anchor, onR
               starting schedule
             </div>
             <div className="sc-age">
-              {ageLabel(weeks)} · {s.items.length} naps
+              {monthsAndWeeks(weeks)} · {s.items.length} naps
             </div>
             <div className="sc-rule" />
             <div className="sc-rows">
