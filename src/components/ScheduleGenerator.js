@@ -162,7 +162,7 @@ function PdfCaptureCard({ name, dob }) {
         </div>
         <div style={{ marginTop: 10 }}>
           <button type="submit" className="btn" disabled={status === "loading"}>
-            {status === "error" ? "Couldn't send — try again" : status === "loading" ? "Sending…" : "Send me the cheat sheet"}
+            {status === "error" ? "Couldn't send — try again" : status === "loading" ? "Sending…" : "Send me Wake Windows PDF"}
           </button>
         </div>
       </form>
