@@ -89,7 +89,7 @@ export default async function Home({ searchParams }) {
 
       <div className="wrap">
         <header className="app-head">
-          <div className="brandmark">
+          <a className="brandmark" href="https://sn00zly.com">
             <svg
               className="moon"
               viewBox="0 0 24 24"
@@ -103,7 +103,7 @@ export default async function Home({ searchParams }) {
               <circle cx="17.5" cy="5.5" r="1.3" fill="#C9A463" />
             </svg>
             Sn00zly
-          </div>
+          </a>
           <div className="eyebrow">Free Sleep Schedule Generator</div>
           <h1>Build Your Baby&apos;s Sleep Schedule for Today</h1>
           <p className="lede">

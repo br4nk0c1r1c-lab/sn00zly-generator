@@ -184,7 +184,7 @@ body{
 .brandmark{
   display:flex;align-items:center;gap:9px;
   font-size:13px;font-weight:600;letter-spacing:3px;text-transform:uppercase;
-  color:var(--navy);
+  color:var(--navy);text-decoration:none;
 }
 .brandmark .moon{width:17px;height:17px;display:block}
 .eyebrow{
