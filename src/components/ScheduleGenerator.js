@@ -532,7 +532,7 @@ function computeResultView({ name, dob, wake, struggle, anchor }) {
 }
 
 export default function ScheduleGenerator({ initial }) {
-  const [name, setName] = useState(initial?.name || "Mila");
+  const [name, setName] = useState(initial?.name || "");
   const [dob, setDob] = useState(initial?.dob || "");
   const [wake, setWake] = useState(initial?.wake || "06:45");
   const [struggle, setStruggle] = useState(initial?.struggle || "short");
