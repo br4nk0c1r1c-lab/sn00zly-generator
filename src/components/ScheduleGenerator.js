@@ -232,7 +232,7 @@ function ScheduleResult({ name, dob, wake, weeks, wakeMin, struggle, anchor, onR
     <>
       <div className="result-head reveal">
         <span className="age-pill">{ageLabel(weeks)}</span>
-        <h2>A starting schedule for {name}</h2>
+        <h2>Starting schedule for {name}</h2>
         <p className="lede">
           Built from an age of {weeks} weeks and this morning’s {fmt(wakeMin)} wake-up.
         </p>
@@ -565,7 +565,7 @@ export default function ScheduleGenerator({ initial }) {
     }
     setResultView(
       computeResultView({
-        name: initial?.name || "Mila",
+        name: initial?.name || "Sarah",
         dob: effectiveDob,
         wake: initial?.wake || "06:45",
         struggle: initial?.struggle || "short",
