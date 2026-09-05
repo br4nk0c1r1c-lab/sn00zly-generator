@@ -145,9 +145,9 @@ function PdfCaptureCard({ name, dob }) {
 
   return (
     <div className="capture reveal" style={{ marginTop: 16 }}>
-      <h3>Want {poss(name)} schedule as a printable PDF?</h3>
+      <h3>Want to stay one step ahead of {poss(name)} sleep changes?</h3>
       <p>
-        We’ll also email you the day the wake windows change — and again before every nap transition, until {name} is two.
+        We’ll email you our printable 0–24 month Wake Window Cheat Sheet, then send helpful updates as {name} approaches new wake windows and nap transitions.
       </p>
       <form onSubmit={handleSubmit}>
         <div className="field">
@@ -162,11 +162,11 @@ function PdfCaptureCard({ name, dob }) {
         </div>
         <div style={{ marginTop: 10 }}>
           <button type="submit" className="btn" disabled={status === "loading"}>
-            {status === "error" ? "Couldn't send — try again" : status === "loading" ? "Sending…" : "Email me the PDF"}
+            {status === "error" ? "Couldn't send — try again" : status === "loading" ? "Sending…" : "Send me the cheat sheet"}
           </button>
         </div>
       </form>
-      <p className="no-signup">One email per milestone. Unsubscribe any time.</p>
+      <p className="no-signup">Helpful sleep emails as {name} grows. Unsubscribe anytime.</p>
     </div>
   );
 }
