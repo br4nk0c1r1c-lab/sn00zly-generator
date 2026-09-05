@@ -99,11 +99,10 @@ export default async function Home({ searchParams }) {
             Sn00zly
           </div>
           <div className="eyebrow">Free Sleep Schedule Generator</div>
-          <h1>Where today&apos;s naps should land</h1>
+          <h1>Build Your Baby&apos;s Sleep Schedule for Today</h1>
           <p className="lede">
-            Four questions. We map the day from your baby&apos;s exact age in
-            weeks and this morning&apos;s wake-up — a flexible starting point,
-            not a strict schedule.
+            Enter your baby&apos;s age and today&apos;s wake-up time. We&apos;ll
+            map out naps, wake windows and bedtime in seconds.
           </p>
           <div className="trustline">
             <span className="chip-trust">Built from pediatrician-reviewed guides</span>
