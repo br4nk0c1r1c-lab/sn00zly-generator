@@ -538,6 +538,7 @@ export default function ScheduleGenerator({ initial }) {
   const [struggle, setStruggle] = useState(initial?.struggle || "short");
   const [resultView, setResultView] = useState(null);
   const [renderId, setRenderId] = useState(0);
+  const [maxDob, setMaxDob] = useState(undefined);
   const resultRef = useRef(null);
   const pendingScrollRef = useRef(false);
 
@@ -556,6 +557,10 @@ export default function ScheduleGenerator({ initial }) {
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     trackEvent("generator_start");
+    const now = new Date();
+    setMaxDob(
+      `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`
+    );
     let effectiveDob = initial?.dob;
     if (!effectiveDob) {
       const d = new Date();
@@ -618,6 +623,7 @@ export default function ScheduleGenerator({ initial }) {
                 id="dob"
                 value={dob}
                 onChange={(e) => setDob(e.target.value)}
+                max={maxDob}
                 required
               />
             </div>
