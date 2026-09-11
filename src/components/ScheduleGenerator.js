@@ -16,6 +16,7 @@ import { monthsAndWeeks, poss, rangeStr } from "@/lib/schedule-format";
 import { bundleForWeeks } from "@/lib/bundles";
 import { buildShareQuery } from "@/lib/share-params";
 import { trackEvent } from "@/lib/analytics";
+import { captureUtm, getUtm } from "@/lib/utm";
 import { BASE_PATH } from "@/lib/base-path";
 
 const STRUGGLE_CHIPS = [
@@ -121,7 +122,7 @@ function PdfCaptureCard({ name, dob }) {
       const res = await fetch("/api/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, name, dob }),
+        body: JSON.stringify({ email, name, dob, utm: getUtm() }),
       });
       if (!res.ok) throw new Error("request failed");
       trackEvent("email_capture");
@@ -556,6 +557,7 @@ export default function ScheduleGenerator({ initial }) {
   // useState initializer even when dob comes from the URL.
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
+    captureUtm();
     trackEvent("generator_start");
     const now = new Date();
     setMaxDob(

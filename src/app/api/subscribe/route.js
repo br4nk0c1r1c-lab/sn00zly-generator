@@ -15,11 +15,34 @@ function klaviyoHeaders() {
   };
 }
 
-async function upsertProfile({ email, babyName, dob, ageRange }) {
+const UTM_KEYS = [
+  "utm_source",
+  "utm_medium",
+  "utm_campaign",
+  "utm_content",
+  "utm_term",
+];
+
+// The client sends whatever sat in the landing URL, so take only the five keys
+// we expect, only as strings, and only up to a sane length.
+function sanitizeUtm(raw) {
+  if (!raw || typeof raw !== "object") return {};
+  const clean = {};
+  for (const key of UTM_KEYS) {
+    const value = raw[key];
+    if (typeof value === "string" && value.trim()) {
+      clean[key] = value.trim().slice(0, 200);
+    }
+  }
+  return clean;
+}
+
+async function upsertProfile({ email, babyName, dob, ageRange, utm }) {
   const properties = {
     baby_name: babyName,
     baby_dob: dob,
     baby_age_range: ageRange,
+    ...utm,
   };
 
   const createRes = await fetch(`${KLAVIYO_API_BASE}/profiles/`, {
@@ -99,7 +122,7 @@ export async function POST(request) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  const { email, name, dob } = payload || {};
+  const { email, name, dob, utm } = payload || {};
   if (!email || typeof email !== "string" || !email.includes("@")) {
     return NextResponse.json({ error: "A valid email is required" }, { status: 400 });
   }
@@ -111,7 +134,7 @@ export async function POST(request) {
   const ageRange = bundleForWeeks(weeksOld(dob)).range;
 
   try {
-    await upsertProfile({ email, babyName, dob, ageRange });
+    await upsertProfile({ email, babyName, dob, ageRange, utm: sanitizeUtm(utm) });
     await subscribeToFreeGuideList(email);
   } catch (err) {
     console.error("subscribe route error:", err);
