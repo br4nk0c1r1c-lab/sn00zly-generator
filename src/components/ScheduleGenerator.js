@@ -136,9 +136,9 @@ function PdfCaptureCard({ name, dob }) {
   if (status === "done") {
     return (
       <div className="capture reveal" style={{ marginTop: 16 }}>
-        <h3>Check your inbox</h3>
+        <h3>On its way</h3>
         <p>
-          We just sent {poss(name)} wake window cheat sheet to {email}.
+          {poss(name)} schedule and wake window cheat sheet are headed to {email} — give it a few minutes to land.
         </p>
       </div>
     );
