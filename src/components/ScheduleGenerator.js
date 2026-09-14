@@ -146,9 +146,9 @@ function PdfCaptureCard({ name, dob }) {
 
   return (
     <div className="capture reveal" style={{ marginTop: 16 }}>
-      <h3>Want to stay one step ahead of {poss(name)} sleep changes?</h3>
+      <h3>Want {poss(name)} schedule saved?</h3>
       <p>
-        We’ll email you our printable 0–24 month Wake Window Cheat Sheet, then send helpful updates as {name} approaches new wake windows and nap transitions.
+        We’ll email you this schedule so it is not gone when you close the tab, plus our printable 0–24 month Wake Window Cheat Sheet.
       </p>
       <form onSubmit={handleSubmit}>
         <div className="field">
@@ -163,7 +163,7 @@ function PdfCaptureCard({ name, dob }) {
         </div>
         <div style={{ marginTop: 10 }}>
           <button type="submit" className="btn" disabled={status === "loading"}>
-            {status === "error" ? "Couldn't send — try again" : status === "loading" ? "Sending…" : "Send me Wake Windows PDF"}
+            {status === "error" ? "Couldn't send — try again" : status === "loading" ? "Sending…" : `Email me ${poss(name)} schedule`}
           </button>
         </div>
       </form>
@@ -368,6 +368,8 @@ function ScheduleResult({ name, dob, wake, weeks, wakeMin, struggle, anchor, onR
         ) : null}
       </div>
 
+      <PdfCaptureCard name={name} dob={dob} />
+
       <div className="card reveal">
         <div className="card-label">How did it actually go?</div>
         <p style={{ fontSize: "13.5px", color: "var(--ink-soft)" }}>
@@ -484,8 +486,6 @@ function ScheduleResult({ name, dob, wake, weeks, wakeMin, struggle, anchor, onR
         <p className="no-signup">Every shared schedule carries the baby’s name and your brand. That is the traffic engine.</p>
       </div>
 
-      <PdfCaptureCard name={name} dob={dob} />
-
       <div className="upsell reveal" style={{ marginTop: 16 }}>
         <span className="tag">The next step</span>
         <h3>The schedule says roughly when. The guide says how.</h3>
@@ -550,11 +550,16 @@ export default function ScheduleGenerator({ initial }) {
     if (scroll) pendingScrollRef.current = true;
   }
 
-  // On first mount, use a shared link's params directly (dob/wake/name/struggle
-  // are already known, no SSR concern), or fall back to a ~19-week-old demo so
-  // the page opens on a real result. weeksOld() depends on the viewer's local
-  // date, which must not be computed during SSR, so this can't be a lazy
-  // useState initializer even when dob comes from the URL.
+  // On first mount, a shared link's params are already known, so open straight
+  // on that result (weeksOld() depends on the viewer's local date, which must
+  // not be computed during SSR — hence an effect rather than a lazy useState
+  // initializer).
+  //
+  // Without those params the page now opens EMPTY. It used to render a demo
+  // schedule for a made-up 19-week-old called Sarah, which read as a finished
+  // answer: 12-14 Sep 2026, ~122 ad visitors produced 2 generator_complete
+  // events and zero emails. Visitors saw a schedule and left without ever
+  // entering their own baby.
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     captureUtm();
@@ -563,22 +568,17 @@ export default function ScheduleGenerator({ initial }) {
     setMaxDob(
       `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`
     );
-    let effectiveDob = initial?.dob;
-    if (!effectiveDob) {
-      const d = new Date();
-      d.setDate(d.getDate() - 133);
-      effectiveDob = d.toISOString().slice(0, 10);
-      setDob(effectiveDob);
+    if (initial?.dob) {
+      setResultView(
+        computeResultView({
+          name: initial?.name || "",
+          dob: initial.dob,
+          wake: initial?.wake || "06:45",
+          struggle: initial?.struggle || "short",
+          anchor: null,
+        })
+      );
     }
-    setResultView(
-      computeResultView({
-        name: initial?.name || "Sarah",
-        dob: effectiveDob,
-        wake: initial?.wake || "06:45",
-        struggle: initial?.struggle || "short",
-        anchor: null,
-      })
-    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   /* eslint-enable react-hooks/set-state-in-effect */
