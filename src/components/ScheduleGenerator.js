@@ -12,7 +12,7 @@ import {
   parseHM,
   weeksOld,
 } from "@/lib/schedule-engine";
-import { monthsAndWeeks, poss, rangeStr } from "@/lib/schedule-format";
+import { poss, rangeStr } from "@/lib/schedule-format";
 import { bundleForWeeks } from "@/lib/bundles";
 import { buildShareQuery } from "@/lib/share-params";
 import { trackEvent } from "@/lib/analytics";
@@ -406,48 +406,17 @@ function ScheduleResult({ name, dob, wake, weeks, wakeMin, struggle, anchor, onR
       </div>
 
       <div className="card reveal">
-        <div className="card-label">Save it · share it</div>
-        <div className="share-stage">
-          <div className="share-card">
-            <div className="sc-brand">Sn00zly</div>
-            <div className="sc-name">
-              {poss(name)}
-              <br />
-              starting schedule
-            </div>
-            <div className="sc-age">
-              {monthsAndWeeks(weeks)} · {s.items.length} naps
-            </div>
-            <div className="sc-rule" />
-            <div className="sc-rows">
-              <div className="sc-row">
-                <span>Wake</span>
-                <span>{fmt(wakeMin)}</span>
-              </div>
-              {s.items.map((it, k) => (
-                <div className="sc-row" key={k}>
-                  <span>{it.bridge ? "Catnap" : `Nap ${k + 1}`}</span>
-                  <span>
-                    {fmt(it.start)} – {fmt(it.end)}
-                  </span>
-                </div>
-              ))}
-              <div className="sc-row">
-                <span>Bedtime</span>
-                <span>{s.rhythm ? "No fixed bedtime" : rangeStr(s.bedLow, s.bedHigh)}</span>
-              </div>
-            </div>
-            <div className="sc-foot">A flexible starting point · sn00zly.com</div>
-          </div>
-        </div>
-        {/* "Save as image" used to sit here. It competed directly with the
-            email ask — both offer to keep the schedule, and the free one won.
-            Sharing is a different job (it brings new people in), so the share
-            link stays. The story-format image is still rendered by /api/og. */}
+        {/* This used to render a full-size preview of the share card, because
+            it was showing you the image "Save as image" would download. That
+            button is gone (it competed with the email ask), so the preview was
+            a preview of nothing — roughly a screen of height sitting between
+            the schedule and the $49 upsell. /api/og still renders that image
+            for the shared link's social preview and for the welcome email. */}
+        <div className="card-label">Share it</div>
         <div className="btn-row">
           <ShareLinkButton name={name} dob={dob} wake={wake} struggle={struggle} />
         </div>
-        <p className="no-signup">Every shared schedule carries the baby’s name and your brand. That is the traffic engine.</p>
+        <p className="no-signup">Every shared schedule carries {poss(name)} name and your brand.</p>
       </div>
 
       <div className="upsell reveal" style={{ marginTop: 16 }}>
