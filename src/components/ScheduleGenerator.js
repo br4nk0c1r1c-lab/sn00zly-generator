@@ -63,49 +63,7 @@ function ShareLinkButton({ name, dob, wake, struggle }) {
   );
 }
 
-function SaveImageButton({ name, dob, wake, struggle }) {
-  const [label, setLabel] = useState(null);
-  const [busy, setBusy] = useState(false);
-  const timeoutRef = useRef(null);
-
-  useEffect(() => () => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-  }, []);
-
-  async function handleClick() {
-    trackEvent("image_save");
-    setBusy(true);
-    try {
-      const query = buildShareQuery({ name, dob, wake, struggle });
-      const res = await fetch(`${BASE_PATH}/api/og?format=story&${query}`);
-      if (!res.ok) throw new Error("image request failed");
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${name.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "baby"}-sleep-schedule.png`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-      setLabel("Saved!");
-    } catch {
-      setLabel("Couldn't save — try again");
-    } finally {
-      setBusy(false);
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      timeoutRef.current = setTimeout(() => setLabel(null), 2200);
-    }
-  }
-
-  return (
-    <button type="button" className="btn btn-ghost" onClick={handleClick} disabled={busy}>
-      {label ?? (busy ? "Saving…" : "Save as image")}
-    </button>
-  );
-}
-
-function PdfCaptureCard({ name, dob }) {
+function PdfCaptureCard({ name, dob, wake, struggle }) {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState("idle");
   const timeoutRef = useRef(null);
@@ -122,7 +80,10 @@ function PdfCaptureCard({ name, dob }) {
       const res = await fetch("/api/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, name, dob, utm: getUtm() }),
+        // wake + struggle let the server rebuild this exact schedule and store
+        // it on the Klaviyo profile, so the welcome email can show the parent
+        // the schedule they just made instead of only the cheat sheet.
+        body: JSON.stringify({ email, name, dob, wake, struggle, utm: getUtm() }),
       });
       if (!res.ok) throw new Error("request failed");
       trackEvent("email_capture");
@@ -368,7 +329,7 @@ function ScheduleResult({ name, dob, wake, weeks, wakeMin, struggle, anchor, onR
         ) : null}
       </div>
 
-      <PdfCaptureCard name={name} dob={dob} />
+      <PdfCaptureCard name={name} dob={dob} wake={wake} struggle={struggle} />
 
       <div className="card reveal">
         <div className="card-label">How did it actually go?</div>
@@ -479,8 +440,11 @@ function ScheduleResult({ name, dob, wake, weeks, wakeMin, struggle, anchor, onR
             <div className="sc-foot">A flexible starting point · sn00zly.com</div>
           </div>
         </div>
+        {/* "Save as image" used to sit here. It competed directly with the
+            email ask — both offer to keep the schedule, and the free one won.
+            Sharing is a different job (it brings new people in), so the share
+            link stays. The story-format image is still rendered by /api/og. */}
         <div className="btn-row">
-          <SaveImageButton name={name} dob={dob} wake={wake} struggle={struggle} />
           <ShareLinkButton name={name} dob={dob} wake={wake} struggle={struggle} />
         </div>
         <p className="no-signup">Every shared schedule carries the baby’s name and your brand. That is the traffic engine.</p>

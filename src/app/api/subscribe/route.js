@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
-import { weeksOld } from "@/lib/schedule-engine";
+import { buildSchedule, fmt, parseHM, weeksOld } from "@/lib/schedule-engine";
+import { rangeStr } from "@/lib/schedule-format";
 import { bundleForWeeks } from "@/lib/bundles";
+
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://schedule.sn00zly.com").replace(/\/+$/, "");
+const STRUGGLE_KEYS = ["short", "bedtime", "night", "early"];
 
 const KLAVIYO_API_BASE = "https://a.klaviyo.com/api";
 const KLAVIYO_REVISION = "2024-10-15";
@@ -37,12 +41,66 @@ function sanitizeUtm(raw) {
   return clean;
 }
 
-async function upsertProfile({ email, babyName, dob, ageRange, utm }) {
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
+  );
+}
+
+// The schedule is rebuilt here from dob/wake rather than accepted from the
+// client, so nothing the browser posts ends up rendered as HTML in an email.
+function buildScheduleProps({ babyName, dob, wake, struggle }) {
+  if (typeof wake !== "string" || !/^([01]\d|2[0-3]):[0-5]\d$/.test(wake)) return {};
+
+  const weeks = weeksOld(dob);
+  if (!Number.isFinite(weeks) || weeks < 0 || weeks > 112) return {};
+
+  const wakeMin = parseHM(wake);
+  const s = buildSchedule(weeks, wakeMin);
+
+  const rows = [{ label: "Wake", value: fmt(wakeMin) }];
+  s.items.forEach((it, i) => {
+    rows.push({
+      label: it.bridge ? "Catnap" : `Nap ${i + 1}`,
+      value: `${fmt(it.start)} – ${fmt(it.end)}`,
+    });
+  });
+  rows.push({
+    label: "Bedtime",
+    value: s.rhythm ? "No fixed bedtime" : rangeStr(s.bedLow, s.bedHigh),
+  });
+
+  const cells = rows
+    .map(
+      (r) =>
+        `<tr>` +
+        `<td style="padding:7px 0;border-bottom:1px solid #EFE7DA;font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#5C6A85;">${escapeHtml(r.label)}</td>` +
+        `<td align="right" style="padding:7px 0;border-bottom:1px solid #EFE7DA;font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#22395C;font-weight:bold;">${escapeHtml(r.value)}</td>` +
+        `</tr>`
+    )
+    .join("");
+
+  const query = new URLSearchParams();
+  query.set("n", babyName);
+  query.set("d", dob);
+  query.set("w", wake.replace(":", ""));
+  if (STRUGGLE_KEYS.includes(struggle)) query.set("s", struggle);
+  const qs = query.toString();
+
+  return {
+    schedule_html: `<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:420px;border-collapse:collapse;">${cells}</table>`,
+    schedule_url: `${SITE_URL}/?${qs}`,
+    schedule_image_url: `${SITE_URL}/api/og?${qs}`,
+  };
+}
+
+async function upsertProfile({ email, babyName, dob, ageRange, utm, schedule }) {
   const properties = {
     baby_name: babyName,
     baby_dob: dob,
     baby_age_range: ageRange,
     ...utm,
+    ...schedule,
   };
 
   const createRes = await fetch(`${KLAVIYO_API_BASE}/profiles/`, {
@@ -122,7 +180,7 @@ export async function POST(request) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  const { email, name, dob, utm } = payload || {};
+  const { email, name, dob, wake, struggle, utm } = payload || {};
   if (!email || typeof email !== "string" || !email.includes("@")) {
     return NextResponse.json({ error: "A valid email is required" }, { status: 400 });
   }
@@ -133,8 +191,16 @@ export async function POST(request) {
   const babyName = typeof name === "string" && name.trim() ? name.trim() : "your baby";
   const ageRange = bundleForWeeks(weeksOld(dob)).range;
 
+  // Never let a schedule-building slip stop the signup itself.
+  let schedule = {};
   try {
-    await upsertProfile({ email, babyName, dob, ageRange, utm: sanitizeUtm(utm) });
+    schedule = buildScheduleProps({ babyName, dob, wake, struggle });
+  } catch (err) {
+    console.error("subscribe route: schedule props failed:", err);
+  }
+
+  try {
+    await upsertProfile({ email, babyName, dob, ageRange, utm: sanitizeUtm(utm), schedule });
     await subscribeToFreeGuideList(email);
   } catch (err) {
     console.error("subscribe route error:", err);
