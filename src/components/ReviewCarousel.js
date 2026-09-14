@@ -5,9 +5,9 @@ import { useEffect, useRef, useState } from "react";
 const ROTATE_MS = 5000;
 
 // Matches the total rating count on the live Judge.me widget — some of
-// those 8 reviews are star-only with no written quote, so this can be
+// those 11 reviews are star-only with no written quote, so this can be
 // higher than REVIEWS.length below.
-const TOTAL_REVIEW_COUNT = 8;
+const TOTAL_REVIEW_COUNT = 11;
 
 // Judge.me stays a Shopify-only widget until the paid cross-platform plan is
 // active. Until then these are real reviews transcribed verbatim from the
