@@ -87,9 +87,17 @@ function buildScheduleProps({ babyName, dob, wake, struggle }) {
   if (STRUGGLE_KEYS.includes(struggle)) query.set("s", struggle);
   const qs = query.toString();
 
+  // schedule_url is the link in the welcome email. Without UTMs those return
+  // visits land in GA as direct traffic and the email looks like it does
+  // nothing — which is the whole reason the link is there.
+  const emailQuery = new URLSearchParams(qs);
+  emailQuery.set("utm_source", "klaviyo");
+  emailQuery.set("utm_medium", "email");
+  emailQuery.set("utm_campaign", "welcome");
+
   return {
     schedule_html: `<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:420px;border-collapse:collapse;">${cells}</table>`,
-    schedule_url: `${SITE_URL}/?${qs}`,
+    schedule_url: `${SITE_URL}/?${emailQuery.toString()}`,
     schedule_image_url: `${SITE_URL}/api/og?${qs}`,
   };
 }
