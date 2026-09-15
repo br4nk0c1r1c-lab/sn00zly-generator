@@ -3,6 +3,7 @@ import { Poppins, Lora } from "next/font/google";
 import "./globals.css";
 
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID;
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -21,9 +22,9 @@ const lora = Lora({
 
 export const metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
-  title: "Sn00zly Sleep Schedule Generator",
+  title: "Sn00zly Daily Sleep Planner",
   description:
-    "Free baby sleep schedule generator. Four questions, and a starting schedule for naps and bedtime built from your baby's age and this morning's wake-up.",
+    "A fresh sleep plan for your baby every morning — naps, wake windows and bedtime built from age and today's wake-up. $4.99 a month, cancel anytime.",
 };
 
 export default function RootLayout({ children }) {
@@ -46,6 +47,19 @@ export default function RootLayout({ children }) {
               `}
             </Script>
           </>
+        )}
+        {META_PIXEL_ID && (
+          <Script id="meta-pixel" strategy="afterInteractive">
+            {`
+              !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+              n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+              n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+              t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+              document,'script','https://connect.facebook.net/en_US/fbevents.js');
+              fbq('init', '${META_PIXEL_ID}');
+              fbq('track', 'PageView');
+            `}
+          </Script>
         )}
       </body>
     </html>

@@ -1,135 +1,79 @@
-import ReviewCarousel from "@/components/ReviewCarousel";
+import SalesPage from "@/components/SalesPage";
 import ScheduleGenerator from "@/components/ScheduleGenerator";
+import { Brandmark, TopBar } from "@/components/BrandHeader";
+import { PageShell } from "@/components/TrustCards";
 import { BASE_PATH } from "@/lib/base-path";
-import { buildShareQuery, parseShareSearchParams } from "@/lib/share-params";
+import { hasSessionCookie } from "@/lib/membership";
+import { verifiedShare } from "@/lib/share-link";
+import { buildShareQuery } from "@/lib/share-params";
+import { hmac } from "@/lib/signing";
+
+function toUrlSearchParams(sp) {
+  const params = new URLSearchParams();
+  for (const [k, v] of Object.entries(sp || {})) {
+    if (typeof v === "string") params.set(k, v);
+    else if (Array.isArray(v) && v.length) params.set(k, v[0]);
+  }
+  return params;
+}
 
 export async function generateMetadata({ searchParams }) {
-  const sp = await searchParams;
-  const { name, dob, wake, struggle } = parseShareSearchParams(sp);
-  const hasShare = Boolean(name && dob && wake);
+  const shared = verifiedShare(toUrlSearchParams(await searchParams));
 
-  const title = hasShare
-    ? `A starting schedule for ${name} — Sn00zly`
-    : "Sn00zly Sleep Schedule Generator";
-  const description = hasShare
-    ? `A flexible starting schedule for ${name}, built from age and this morning's wake-up. Free, no signup.`
-    : "Free baby sleep schedule generator. Four questions, and a starting schedule for naps and bedtime built from your baby's age and this morning's wake-up.";
+  if (!shared) {
+    return {
+      title: "Sn00zly Daily Sleep Planner — today’s naps and bedtime for your baby",
+      description:
+        "Enter this morning's wake-up and get today's naps, wake windows and bedtime for your baby (0–24 months). $4.99 a month, cancel anytime.",
+      alternates: { canonical: "/" },
+      openGraph: {
+        title: "Sn00zly Daily Sleep Planner",
+        description: "Today's naps, wake windows and bedtime for your baby — in ten seconds.",
+        images: [{ url: `${BASE_PATH}/api/og`, width: 1200, height: 630 }],
+      },
+    };
+  }
 
-  const query = buildShareQuery({ name, dob, wake, struggle });
-  const ogImage = `${BASE_PATH}/api/og${query ? `?${query}` : ""}`;
-
+  const name = shared.name || "a baby";
+  const query = buildShareQuery(shared);
+  const ogImage = `${BASE_PATH}/api/og?${query}&k=${hmac("share", query)}`;
+  const title = `Today's sleep plan for ${name} — Sn00zly`;
+  const description = `Naps, wake windows and bedtime for ${name}, from the Sn00zly Daily Sleep Planner.`;
   return {
     title,
     description,
-    // Shared links carry the baby's name and birth date in the URL so the
-    // schedule can recompute as the baby ages. Keeping those out of search
-    // results and always pointing search engines back at the plain
-    // generator avoids indexing personal data.
-    robots: hasShare ? { index: false, follow: true } : undefined,
+    // Shared links carry the baby's name and birth date, so keep them out
+    // of search results.
+    robots: { index: false, follow: true },
     alternates: { canonical: "/" },
-    openGraph: {
-      title,
-      description,
-      images: [{ url: ogImage, width: 1200, height: 630 }],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-      images: [ogImage],
-    },
+    openGraph: { title, description, images: [{ url: ogImage, width: 1200, height: 630 }] },
+    twitter: { card: "summary_large_image", title, description, images: [ogImage] },
   };
 }
 
-function ClinicalReviewCard() {
-  return (
-    <div className="side-card">
-      <div className="side-card-label">Clinically reviewed</div>
-      <p>
-        Every Sn00zly guide is reviewed for clinical accuracy by a
-        board-certified pediatrician.
-      </p>
-      <a
-        href="https://sn00zly.com/pages/medical-review"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="side-card-link"
-      >
-        Read the review letter →
-      </a>
-    </div>
-  );
-}
-
-function ReviewsCard() {
-  return (
-    <div className="side-card">
-      <div className="side-card-label">What parents say</div>
-      {/* Judge.me's live widget needs their paid cross-platform plan
-          (the Shopify Liquid snippet only resolves inside a Shopify
-          theme). Until then, this rotates real reviews transcribed
-          from the live Judge.me widget on sn00zly.com — see
-          src/components/ReviewCarousel.js to update the quotes. */}
-      <ReviewCarousel />
-    </div>
-  );
-}
+const CHECKOUT_NOTES = {
+  canceled: "Checkout was closed and nothing was charged. The offer is still here whenever you are ready.",
+  pending: "We couldn't confirm the payment yet. If you were charged, check your email for the sign-in link or use Member sign in.",
+};
 
 export default async function Home({ searchParams }) {
   const sp = await searchParams;
-  const initial = parseShareSearchParams(sp);
+  const signedIn = await hasSessionCookie();
+  const shared = verifiedShare(toUrlSearchParams(sp));
+  const checkoutKey = typeof sp?.checkout === "string" ? sp.checkout : null;
+
+  if (!shared) {
+    return <SalesPage signedIn={signedIn} checkoutNote={CHECKOUT_NOTES[checkoutKey] || null} />;
+  }
 
   return (
-    <div className="page-shell">
-      <aside className="side-rail" aria-label="Customer reviews">
-        <div className="side-rail-sticky">
-          <ReviewsCard />
-        </div>
-      </aside>
-
-      <div className="wrap">
-        <header className="app-head">
-          <a className="brandmark" href="https://sn00zly.com">
-            <svg
-              className="moon"
-              viewBox="0 0 24 24"
-              fill="none"
-              aria-hidden="true"
-            >
-              <path
-                d="M20.5 14.6A8.7 8.7 0 0 1 9.4 3.5a8.7 8.7 0 1 0 11.1 11.1Z"
-                fill="currentColor"
-              />
-              <circle cx="17.5" cy="5.5" r="1.3" fill="#C9A463" />
-            </svg>
-            Sn00zly
-          </a>
-          <div className="eyebrow">Free Sleep Schedule Generator</div>
-          <h1>Build Your Baby&apos;s Sleep Schedule for Today</h1>
-          <p className="lede">
-            Enter your baby&apos;s age and today&apos;s wake-up time. We&apos;ll
-            map out naps, wake windows and bedtime in seconds.
-          </p>
-          <div className="trustline">
-            <span className="chip-trust">Built from pediatrician-reviewed guides</span>
-            <span className="chip-trust">No signup</span>
-            <span className="chip-trust">Free</span>
-          </div>
-        </header>
-
-        <ScheduleGenerator initial={initial} />
-
-        <div className="mobile-trust-stack">
-          <ReviewsCard />
-          <ClinicalReviewCard />
-        </div>
-      </div>
-
-      <aside className="side-rail" aria-label="Clinical review">
-        <div className="side-rail-sticky">
-          <ClinicalReviewCard />
-        </div>
-      </aside>
-    </div>
+    <PageShell>
+      <TopBar signedIn={signedIn} />
+      <header className="app-head">
+        <Brandmark />
+        <div className="eyebrow">Shared from the Sn00zly Daily Sleep Planner</div>
+      </header>
+      <ScheduleGenerator mode="shared" initial={shared} />
+    </PageShell>
   );
 }

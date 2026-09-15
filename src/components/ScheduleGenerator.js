@@ -14,10 +14,9 @@ import {
 } from "@/lib/schedule-engine";
 import { poss, rangeStr } from "@/lib/schedule-format";
 import { bundleForWeeks } from "@/lib/bundles";
-import { buildShareQuery } from "@/lib/share-params";
 import { trackEvent } from "@/lib/analytics";
-import { captureUtm, getUtm } from "@/lib/utm";
 import { BASE_PATH } from "@/lib/base-path";
+import { COUPON_VALUE, PLANNER_PRICE, shopLinkWithCode } from "@/lib/site";
 
 const STRUGGLE_CHIPS = [
   { k: "short", label: "Short naps" },
@@ -32,103 +31,120 @@ function toHHMM(mins) {
   return String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0");
 }
 
-function ShareLinkButton({ name, dob, wake, struggle }) {
-  const [label, setLabel] = useState(null);
-  const timeoutRef = useRef(null);
+// Remembers the baby between visits so a member only has to enter this
+// morning's wake-up. Browser-only convenience; nothing breaks without it.
+const BABY_KEY = "sn_planner_baby";
 
-  useEffect(() => () => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-  }, []);
-
-  async function handleClick() {
-    trackEvent("share_click");
-    const query = buildShareQuery({ name, dob, wake, struggle });
-    const url = `${window.location.origin}${BASE_PATH}/${query ? `?${query}` : ""}`;
-    let copied = false;
-    try {
-      await navigator.clipboard.writeText(url);
-      copied = true;
-    } catch {
-      copied = false;
-    }
-    setLabel(copied ? "Link copied!" : url);
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => setLabel(null), 2200);
+function loadBaby() {
+  try {
+    const raw = window.localStorage.getItem(BABY_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
   }
-
-  return (
-    <button type="button" className="btn btn-ghost" onClick={handleClick}>
-      {label ?? "Share link"}
-    </button>
-  );
 }
 
-function PdfCaptureCard({ name, dob, wake, struggle }) {
-  const [email, setEmail] = useState("");
-  const [status, setStatus] = useState("idle");
+function saveBaby(baby) {
+  try {
+    window.localStorage.setItem(BABY_KEY, JSON.stringify(baby));
+  } catch {
+    // Private mode or blocked storage.
+  }
+}
+
+async function fetchShareLinks(fields) {
+  const res = await fetch(`${BASE_PATH}/api/share`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(fields),
+  });
+  if (!res.ok) throw new Error("share failed");
+  return res.json();
+}
+
+function ShareActions({ name, dob, wake, struggle }) {
+  const [shareLabel, setShareLabel] = useState(null);
+  const [imageLabel, setImageLabel] = useState(null);
   const timeoutRef = useRef(null);
 
   useEffect(() => () => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
   }, []);
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    if (status === "loading") return;
-    setStatus("loading");
+  function flash(setter, text) {
+    setter(text);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      setShareLabel(null);
+      setImageLabel(null);
+    }, 2400);
+  }
+
+  async function handleShare() {
+    trackEvent("share_click");
     try {
-      const res = await fetch("/api/subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        // wake + struggle let the server rebuild this exact schedule and store
-        // it on the Klaviyo profile, so the welcome email can show the parent
-        // the schedule they just made instead of only the cheat sheet.
-        body: JSON.stringify({ email, name, dob, wake, struggle, utm: getUtm() }),
-      });
-      if (!res.ok) throw new Error("request failed");
-      trackEvent("email_capture");
-      setStatus("done");
+      const { url } = await fetchShareLinks({ name, dob, wake, struggle });
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: `${poss(name)} sleep plan for today`, url });
+          return;
+        } catch (err) {
+          if (err && err.name === "AbortError") return;
+        }
+      }
+      await navigator.clipboard.writeText(url);
+      flash(setShareLabel, "Link copied!");
     } catch {
-      setStatus("error");
-      timeoutRef.current = setTimeout(() => setStatus("idle"), 2200);
+      flash(setShareLabel, "Couldn't create link");
     }
   }
 
-  if (status === "done") {
-    return (
-      <div className="capture reveal" style={{ marginTop: 16 }}>
-        <h3>On its way</h3>
-        <p>
-          {poss(name)} schedule and wake window cheat sheet are headed to {email} — give it a few minutes to land.
-        </p>
-      </div>
-    );
+  async function handleImage() {
+    trackEvent("save_image_click");
+    setImageLabel("Preparing…");
+    try {
+      const { imageUrl } = await fetchShareLinks({ name, dob, wake, struggle });
+      const res = await fetch(imageUrl);
+      if (!res.ok) throw new Error("image failed");
+      const blob = await res.blob();
+      const fileName = `sn00zly-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-plan.png`;
+      const file = new File([blob], fileName, { type: "image/png" });
+      // On phones the share sheet is where "Save Image" lives.
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: `${poss(name)} sleep plan` });
+          setImageLabel(null);
+          return;
+        } catch (err) {
+          if (err && err.name === "AbortError") {
+            setImageLabel(null);
+            return;
+          }
+        }
+      }
+      const href = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = href;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(href), 4000);
+      flash(setImageLabel, "Saved!");
+    } catch {
+      flash(setImageLabel, "Couldn't save — try again");
+    }
   }
 
   return (
-    <div className="capture reveal" style={{ marginTop: 16 }}>
-      <h3>Want {poss(name)} schedule saved?</h3>
-      <p>
-        We’ll email you this schedule so it is not gone when you close the tab, plus our printable 0–24 month Wake Window Cheat Sheet.
-      </p>
-      <form onSubmit={handleSubmit}>
-        <div className="field">
-          <input
-            type="email"
-            placeholder="you@email.com"
-            aria-label="Email address"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </div>
-        <div style={{ marginTop: 10 }}>
-          <button type="submit" className="btn" disabled={status === "loading"}>
-            {status === "error" ? "Couldn't send — try again" : status === "loading" ? "Sending…" : `Email me ${poss(name)} schedule`}
-          </button>
-        </div>
-      </form>
-      <p className="no-signup">Helpful sleep emails as {name} grows. Unsubscribe anytime.</p>
+    <div className="btn-row">
+      <button type="button" className="btn" onClick={handleImage}>
+        {imageLabel ?? "Save as image"}
+      </button>
+      <button type="button" className="btn btn-ghost" onClick={handleShare}>
+        {shareLabel ?? "Share link"}
+      </button>
     </div>
   );
 }
@@ -165,7 +181,8 @@ function OutOfRangeCard({ name }) {
   );
 }
 
-function ScheduleResult({ name, dob, wake, weeks, wakeMin, struggle, anchor, onRecalc }) {
+function ScheduleResult({ mode, couponCode, name, dob, wake, weeks, wakeMin, struggle, anchor, onRecalc }) {
+  const isMember = mode === "member";
   const s = buildSchedule(weeks, wakeMin, anchor ?? undefined);
   const b = s.band;
   const nt = nextTransition(weeks);
@@ -194,7 +211,7 @@ function ScheduleResult({ name, dob, wake, weeks, wakeMin, struggle, anchor, onR
     <>
       <div className="result-head reveal">
         <span className="age-pill">{ageLabel(weeks)}</span>
-        <h2>Starting schedule for {name}</h2>
+        <h2>{isMember ? `Today’s plan for ${name}` : `A sleep plan for ${name}`}</h2>
         <p className="lede">
           Built from an age of {weeks} weeks and this morning’s {fmt(wakeMin)} wake-up.
         </p>
@@ -329,8 +346,7 @@ function ScheduleResult({ name, dob, wake, weeks, wakeMin, struggle, anchor, onR
         ) : null}
       </div>
 
-      <PdfCaptureCard name={name} dob={dob} wake={wake} struggle={struggle} />
-
+      {isMember ? (
       <div className="card reveal">
         <div className="card-label">How did it actually go?</div>
         <p style={{ fontSize: "13.5px", color: "var(--ink-soft)" }}>
@@ -357,6 +373,7 @@ function ScheduleResult({ name, dob, wake, weeks, wakeMin, struggle, anchor, onR
           ) : null}
         </div>
       </div>
+      ) : null}
 
       <div className="card reveal">
         <div className="card-label">What comes next</div>
@@ -405,40 +422,60 @@ function ScheduleResult({ name, dob, wake, weeks, wakeMin, struggle, anchor, onR
         </div>
       </div>
 
-      <div className="card reveal">
-        {/* This used to render a full-size preview of the share card, because
-            it was showing you the image "Save as image" would download. That
-            button is gone (it competed with the email ask), so the preview was
-            a preview of nothing — roughly a screen of height sitting between
-            the schedule and the $49 upsell. /api/og still renders that image
-            for the shared link's social preview and for the welcome email. */}
-        <div className="card-label">Share it</div>
-        <div className="btn-row">
-          <ShareLinkButton name={name} dob={dob} wake={wake} struggle={struggle} />
-        </div>
-        <p className="no-signup">Every shared schedule carries {poss(name)} name and your brand.</p>
-      </div>
+      {isMember ? (
+        <>
+          <div className="card reveal">
+            <div className="card-label">Keep it handy</div>
+            <p style={{ fontSize: "13.5px", color: "var(--ink-soft)" }}>
+              Save today’s plan to your phone, or send it to whoever has {name} today.
+            </p>
+            <ShareActions name={name} dob={dob} wake={wake} struggle={struggle} />
+          </div>
 
-      <div className="upsell reveal" style={{ marginTop: 16 }}>
-        <span className="tag">The next step</span>
-        <h3>The schedule says roughly when. The guide says how.</h3>
-        <p>
-          Knowing the window is the easy half. If {name} fights the last nap, or the window keeps sliding, that is what the {b.label} guide is for — settling, wake-window troubleshooting, and the full nap-transition protocol, reviewed by a pediatrician.
-        </p>
-        <div className="price">
-          <span className="p">${bundle.price}</span>
-          <span className="was">${bundle.wasPrice}</span>
+          <div className="upsell reveal" style={{ marginTop: 16 }}>
+            <span className="tag">Member price</span>
+            <h3>The plan says roughly when. The guide says how.</h3>
+            <p>
+              Knowing the window is the easy half. If {name} fights the last nap, or the window keeps sliding, that is what the {b.label} guide is for — settling, wake-window troubleshooting, and the full nap-transition protocol, reviewed by a pediatrician.
+            </p>
+            <div className="price">
+              <span className="p">${couponCode ? bundle.price - COUPON_VALUE : bundle.price}</span>
+              <span className="was">${couponCode ? bundle.price : bundle.wasPrice}</span>
+            </div>
+            {couponCode ? (
+              <p style={{ marginTop: 4 }}>Your ${COUPON_VALUE} member code is applied automatically.</p>
+            ) : null}
+            <a
+              className="btn btn-gold"
+              href={shopLinkWithCode(bundle.href, couponCode, `bundle_${bundle.range}`)}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackEvent("product_click", { band: b.label, bundle: bundle.range, member: true })}
+            >
+              See the {bundle.displayRange} bundle
+            </a>
+          </div>
+        </>
+      ) : (
+        <div className="upsell reveal" style={{ marginTop: 16 }}>
+          <span className="tag">Sn00zly Daily Sleep Planner</span>
+          <h3>A fresh plan like this for your baby, every morning.</h3>
+          <p>
+            Enter today’s wake-up and get the naps, wake windows and bedtime for the day — rebuilt when a nap runs short. Plus the Wake Window Cheat Sheet and a ${COUPON_VALUE} code for any Sn00zly guide.
+          </p>
+          <div className="price">
+            <span className="p">${PLANNER_PRICE}</span>
+            <span className="was" style={{ textDecoration: "none" }}>per month · cancel anytime</span>
+          </div>
+          <a
+            className="btn btn-gold"
+            href={`${BASE_PATH}/#pricing`}
+            onClick={() => trackEvent("shared_cta_click")}
+          >
+            Start my baby’s plan
+          </a>
         </div>
-        <a
-          className="btn btn-gold"
-          href={bundle.href}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={() => trackEvent("product_click", { band: b.label, bundle: bundle.range })}
-        >
-          See the {bundle.displayRange} bundle
-        </a>
-      </div>
+      )}
 
       <p className="disclaimer">
         Sn00zly schedules are general educational guidance reviewed against AAP safe-sleep principles. They are a flexible starting point based on age and morning wake time — not medical advice, and not a substitute for your pediatrician.
@@ -465,7 +502,8 @@ function computeResultView({ name, dob, wake, struggle, anchor }) {
   };
 }
 
-export default function ScheduleGenerator({ initial }) {
+export default function ScheduleGenerator({ initial, mode = "member", couponCode = null }) {
+  const isMember = mode === "member";
   const [name, setName] = useState(initial?.name || "");
   const [dob, setDob] = useState(initial?.dob || "");
   const [wake, setWake] = useState(initial?.wake || "06:45");
@@ -495,12 +533,17 @@ export default function ScheduleGenerator({ initial }) {
   // entering their own baby.
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    captureUtm();
-    trackEvent("generator_start");
+    trackEvent(isMember ? "planner_open" : "shared_view");
     const now = new Date();
     setMaxDob(
       `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`
     );
+    if (isMember && !initial?.dob) {
+      const saved = loadBaby();
+      if (saved?.name) setName(String(saved.name).slice(0, 18));
+      if (saved?.dob) setDob(String(saved.dob));
+      if (saved?.struggle !== undefined) setStruggle(saved.struggle);
+    }
     if (initial?.dob) {
       setResultView(
         computeResultView({
@@ -526,6 +569,7 @@ export default function ScheduleGenerator({ initial }) {
   function handleSubmit(e) {
     e.preventDefault();
     trackEvent("generator_complete", { struggle: struggle || undefined });
+    saveBaby({ name, dob, struggle });
     commit(null, { scroll: true });
   }
 
@@ -535,8 +579,9 @@ export default function ScheduleGenerator({ initial }) {
 
   return (
     <>
+      {isMember ? (
       <form className="card" onSubmit={handleSubmit} autoComplete="off">
-        <div className="card-label">Tell us about your baby</div>
+        <div className="card-label">Today&apos;s plan</div>
         <div className="field-grid">
           <div className="field">
             <label htmlFor="babyName">Baby&apos;s first name</label>
@@ -591,17 +636,20 @@ export default function ScheduleGenerator({ initial }) {
             <span className="hint">Optional — it changes which tips you see, not the times.</span>
           </div>
           <button type="submit" className="btn">
-            Build my schedule
+            Build today&apos;s plan
           </button>
-          <p className="no-signup">No email needed. Your schedule appears right below.</p>
+          <p className="no-signup">We remember your baby on this device — tomorrow you only change the wake-up time.</p>
         </div>
       </form>
+      ) : null}
 
       <section ref={resultRef} aria-live="polite" hidden={!resultView}>
         {resultView?.kind === "range" ? <OutOfRangeCard name={resultView.name} /> : null}
         {resultView?.kind === "schedule" ? (
           <ScheduleResult
             key={renderId}
+            mode={mode}
+            couponCode={couponCode}
             name={resultView.name}
             dob={resultView.dob}
             wake={resultView.wake}
