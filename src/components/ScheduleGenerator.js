@@ -63,10 +63,58 @@ async function fetchShareLinks(fields) {
   return res.json();
 }
 
+function isTouchDevice() {
+  try {
+    return window.matchMedia("(pointer: coarse)").matches;
+  } catch {
+    return false;
+  }
+}
+
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    // Older browsers, or the page lost focus: fall back to a hidden textarea.
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand("copy");
+      ta.remove();
+      return ok;
+    } catch {
+      return false;
+    }
+  }
+}
+
 function ShareActions({ name, dob, wake, struggle }) {
+  const [links, setLinks] = useState(null);
   const [shareLabel, setShareLabel] = useState(null);
   const [imageLabel, setImageLabel] = useState(null);
+  const [manualUrl, setManualUrl] = useState(null);
   const timeoutRef = useRef(null);
+
+  // Fetch the signed links as soon as the plan is shown. Browsers only allow
+  // sharing and clipboard writes right after a click, so the click handler
+  // must not wait on the network first.
+  useEffect(() => {
+    let cancelled = false;
+    fetchShareLinks({ name, dob, wake, struggle })
+      .then((l) => {
+        if (!cancelled) setLinks(l);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [name, dob, wake, struggle]);
 
   useEffect(() => () => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -81,22 +129,37 @@ function ShareActions({ name, dob, wake, struggle }) {
     }, 2400);
   }
 
+  async function getLinks() {
+    if (links) return links;
+    const l = await fetchShareLinks({ name, dob, wake, struggle });
+    setLinks(l);
+    return l;
+  }
+
   async function handleShare() {
     trackEvent("share_click");
+    let url;
     try {
-      const { url } = await fetchShareLinks({ name, dob, wake, struggle });
-      if (navigator.share) {
-        try {
-          await navigator.share({ title: `${poss(name)} sleep plan for today`, url });
-          return;
-        } catch (err) {
-          if (err && err.name === "AbortError") return;
-        }
-      }
-      await navigator.clipboard.writeText(url);
-      flash(setShareLabel, "Link copied!");
+      url = (await getLinks()).url;
     } catch {
-      flash(setShareLabel, "Couldn't create link");
+      flash(setShareLabel, "Couldn't create link — try again");
+      return;
+    }
+    // The share sheet is the natural choice on phones; on computers a copied
+    // link is what people expect.
+    if (isTouchDevice() && navigator.share) {
+      try {
+        await navigator.share({ title: `${poss(name)} sleep plan for today`, url });
+        return;
+      } catch (err) {
+        if (err && err.name === "AbortError") return;
+      }
+    }
+    if (await copyText(url)) {
+      setManualUrl(null);
+      flash(setShareLabel, "Link copied!");
+    } else {
+      setManualUrl(url);
     }
   }
 
@@ -104,14 +167,14 @@ function ShareActions({ name, dob, wake, struggle }) {
     trackEvent("save_image_click");
     setImageLabel("Preparing…");
     try {
-      const { imageUrl } = await fetchShareLinks({ name, dob, wake, struggle });
+      const { imageUrl } = await getLinks();
       const res = await fetch(imageUrl);
       if (!res.ok) throw new Error("image failed");
       const blob = await res.blob();
       const fileName = `sn00zly-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-plan.png`;
       const file = new File([blob], fileName, { type: "image/png" });
       // On phones the share sheet is where "Save Image" lives.
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      if (isTouchDevice() && navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
           await navigator.share({ files: [file], title: `${poss(name)} sleep plan` });
           setImageLabel(null);
@@ -138,14 +201,28 @@ function ShareActions({ name, dob, wake, struggle }) {
   }
 
   return (
-    <div className="btn-row">
-      <button type="button" className="btn" onClick={handleImage}>
-        {imageLabel ?? "Save as image"}
-      </button>
-      <button type="button" className="btn btn-ghost" onClick={handleShare}>
-        {shareLabel ?? "Share link"}
-      </button>
-    </div>
+    <>
+      <div className="btn-row">
+        <button type="button" className="btn" onClick={handleImage}>
+          {imageLabel ?? "Save as image"}
+        </button>
+        <button type="button" className="btn btn-ghost" onClick={handleShare}>
+          {shareLabel ?? "Share link"}
+        </button>
+      </div>
+      {manualUrl ? (
+        <div className="field" style={{ marginTop: 12 }}>
+          <label htmlFor="share-url">Copy this link</label>
+          <input
+            id="share-url"
+            type="text"
+            readOnly
+            value={manualUrl}
+            onFocus={(e) => e.target.select()}
+          />
+        </div>
+      ) : null}
+    </>
   );
 }
 
