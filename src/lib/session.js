@@ -2,7 +2,7 @@ import { signToken, verifyToken } from "@/lib/signing";
 
 // The session cookie only says "this browser belongs to Stripe customer X".
 // Whether X may use the planner is checked against Stripe on every page load
-// (see membership.js), so a cancelled subscription locks the planner even if
+// (see membership.js), so a refund locks the planner even if
 // the cookie is still valid.
 
 export const SESSION_COOKIE = "sn_session";

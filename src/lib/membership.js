@@ -1,10 +1,11 @@
 import { cookies } from "next/headers";
 import { SESSION_COOKIE, readSessionValue } from "@/lib/session";
-import { findAccessSubscription, getStripe, periodEnd } from "@/lib/stripe";
+import { findAccessCustomer } from "@/lib/stripe";
 
 /**
  * The signed-in member for this request, or null.
- * Server-only: reads the session cookie and confirms access with Stripe.
+ * Server-only: reads the session cookie and confirms access with Stripe,
+ * so a refund locks the planner even while the cookie is still valid.
  */
 export async function getMember() {
   const store = await cookies();
@@ -12,16 +13,11 @@ export async function getMember() {
   if (!customerId) return null;
 
   try {
-    const subscription = await findAccessSubscription(customerId);
-    if (!subscription) return null;
-    const customer = await getStripe().customers.retrieve(customerId);
-    if (!customer || customer.deleted) return null;
+    const customer = await findAccessCustomer(customerId);
+    if (!customer) return null;
     return {
       customerId,
       email: customer.email || "",
-      status: subscription.status,
-      cancelAtPeriodEnd: Boolean(subscription.cancel_at_period_end || subscription.cancel_at),
-      periodEnd: periodEnd(subscription),
       couponCode: customer.metadata?.planner_coupon || null,
     };
   } catch (err) {

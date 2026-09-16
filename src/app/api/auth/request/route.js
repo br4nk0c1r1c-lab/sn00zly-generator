@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { findAccessSubscription, findCustomersByEmail } from "@/lib/stripe";
+import { customerHasAccess, findCustomersByEmail } from "@/lib/stripe";
 import { createLoginToken } from "@/lib/session";
 import { sendLoginEmail } from "@/lib/mailer";
 import { SITE_URL } from "@/lib/site";
 
 // Always answers the same way whether or not the email belongs to a member,
-// so the form cannot be used to find out who subscribes.
+// so the form cannot be used to find out who bought the planner.
 
 export async function POST(request) {
   let email = "";
@@ -21,8 +21,7 @@ export async function POST(request) {
   try {
     const customers = await findCustomersByEmail(email);
     for (const customer of customers) {
-      const sub = await findAccessSubscription(customer.id);
-      if (!sub) continue;
+      if (!customerHasAccess(customer)) continue;
       const url = `${SITE_URL}/api/auth/verify?t=${encodeURIComponent(createLoginToken(customer.id))}`;
       await sendLoginEmail({ to: customer.email || email.trim(), url });
       break;

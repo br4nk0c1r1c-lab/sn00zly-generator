@@ -9,7 +9,7 @@ export const metadata = {
 
 const ERRORS = {
   expired: "That sign-in link has expired or was already replaced. Enter your email for a fresh one.",
-  inactive: "We couldn't find an active planner subscription for that link.",
+  inactive: "We couldn't find planner access for that account.",
   checkout: "We couldn't sign you in automatically. If you just paid, enter the email you used at checkout and we'll send a sign-in link.",
   server: "Something went wrong on our side. Please try again.",
 };
@@ -24,7 +24,7 @@ export default async function LoginPage({ searchParams }) {
         <Brandmark />
         <div className="eyebrow">Daily Sleep Planner</div>
         <h1>Sign in</h1>
-        <p className="lede">Enter the email you subscribed with and we&apos;ll send you a sign-in link.</p>
+        <p className="lede">Enter the email you used at checkout and we&apos;ll send you a sign-in link.</p>
       </header>
       {error ? <div className="notice">{error}</div> : null}
       <LoginForm />

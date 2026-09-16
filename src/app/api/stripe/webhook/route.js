@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
-import { fulfillCheckout, recordSubscriptionChange } from "@/lib/fulfillment";
+import { fulfillCheckout, revokeForRefund } from "@/lib/fulfillment";
 
-// Stripe → Settings → Webhooks, endpoint https://schedule.sn00zly.com/api/stripe/webhook
-// Events: checkout.session.completed, customer.subscription.updated,
-// customer.subscription.deleted. Any non-2xx makes Stripe retry.
+// Stripe → Developers → Webhooks, endpoint https://schedule.sn00zly.com/api/stripe/webhook
+// Events: checkout.session.completed, checkout.session.async_payment_succeeded,
+// charge.refunded. Any non-2xx makes Stripe retry.
 
 export async function POST(request) {
   const signature = request.headers.get("stripe-signature");
@@ -24,16 +24,14 @@ export async function POST(request) {
 
   try {
     switch (event.type) {
-      case "checkout.session.completed": {
+      case "checkout.session.completed":
+      case "checkout.session.async_payment_succeeded": {
         const session = event.data.object;
-        if (session.mode === "subscription") await fulfillCheckout(session.id);
+        if (session.mode === "payment") await fulfillCheckout(session.id);
         break;
       }
-      case "customer.subscription.updated":
-        await recordSubscriptionChange(event.data.object, "updated");
-        break;
-      case "customer.subscription.deleted":
-        await recordSubscriptionChange(event.data.object, "deleted");
+      case "charge.refunded":
+        await revokeForRefund(event.data.object);
         break;
       default:
         break;

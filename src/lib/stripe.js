@@ -13,36 +13,45 @@ export function getStripe() {
   return client;
 }
 
-// past_due keeps access while Stripe retries a failed card, so one declined
-// renewal does not lock a parent out at 6am. Stripe cancels the subscription
-// itself when retries run out, and access ends then.
-const ACCESS_STATUSES = new Set(["active", "trialing", "past_due"]);
+// One-time purchase: access lives on the Stripe customer as
+// metadata.planner_access = "lifetime". A refund sets it to "refunded".
+export const ACCESS_KEY = "planner_access";
+export const ACCESS_GRANTED = "lifetime";
+export const ACCESS_REFUNDED = "refunded";
 
-export function hasAccess(subscription) {
-  return Boolean(subscription && ACCESS_STATUSES.has(subscription.status));
+export function customerHasAccess(customer) {
+  return Boolean(customer && !customer.deleted && customer.metadata?.[ACCESS_KEY] === ACCESS_GRANTED);
 }
 
-function plannerPriceId() {
-  return process.env.STRIPE_PRICE_ID;
+/** The Stripe customer if it has planner access, otherwise null. */
+export async function findAccessCustomer(customerId) {
+  try {
+    const customer = await getStripe().customers.retrieve(customerId);
+    return customerHasAccess(customer) ? customer : null;
+  } catch (err) {
+    if (err?.statusCode === 404) return null;
+    throw err;
+  }
 }
 
-function isPlannerSubscription(sub) {
-  const priceId = plannerPriceId();
-  if (!priceId) return true;
-  return sub.items?.data?.some((item) => item.price?.id === priceId);
+/** A completed, paid Checkout Session for the planner price. */
+export function isPaidPlannerSession(session) {
+  if (!session || session.mode !== "payment" || session.status !== "complete") return false;
+  if (session.payment_status !== "paid" && session.payment_status !== "no_payment_required") return false;
+  return session.metadata?.product === "daily_sleep_planner";
 }
 
-/** The customer's planner subscription with access, or null. */
-export async function findAccessSubscription(customerId) {
+export async function grantAccess(customerId) {
   const stripe = getStripe();
-  const subs = await stripe.subscriptions.list({ customer: customerId, status: "all", limit: 20 });
-  return subs.data.find((s) => isPlannerSubscription(s) && hasAccess(s)) || null;
-}
-
-export function periodEnd(subscription) {
-  // Newer Stripe API versions keep the period on the subscription item.
-  const item = subscription?.items?.data?.[0];
-  return item?.current_period_end ?? subscription?.current_period_end ?? null;
+  const customer = await stripe.customers.retrieve(customerId);
+  if (customer.deleted) throw new Error(`Customer ${customerId} was deleted`);
+  // Never re-open access after a refund just because a success link or a
+  // webhook for the original payment is replayed.
+  if (customer.metadata?.[ACCESS_KEY] === ACCESS_REFUNDED) return customer;
+  if (customer.metadata?.[ACCESS_KEY] === ACCESS_GRANTED) return customer;
+  return stripe.customers.update(customerId, {
+    metadata: { [ACCESS_KEY]: ACCESS_GRANTED, planner_purchased_at: new Date().toISOString() },
+  });
 }
 
 /**

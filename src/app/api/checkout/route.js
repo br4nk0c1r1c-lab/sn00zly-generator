@@ -41,17 +41,20 @@ export async function POST(request) {
 
   try {
     const session = await getStripe().checkout.sessions.create({
-      mode: "subscription",
+      mode: "payment",
       line_items: [{ price: priceId, quantity: 1 }],
+      // Payment mode only creates a Stripe customer when asked to, and the
+      // customer is where access and the guide code are stored.
+      customer_creation: "always",
+      payment_intent_data: { metadata: { product: "daily_sleep_planner" } },
       success_url: `${SITE_URL}/api/checkout/complete?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${SITE_URL}/?checkout=canceled`,
       billing_address_collection: "auto",
       allow_promotion_codes: false,
       metadata,
-      subscription_data: { metadata: { product: "daily_sleep_planner" } },
       custom_text: {
         submit: {
-          message: `$${PLANNER_PRICE} is charged today and every month after that until you cancel. Cancel anytime from the planner in two clicks.`,
+          message: `One-time payment of $${PLANNER_PRICE}. No subscription — nothing renews.`,
         },
       },
     });

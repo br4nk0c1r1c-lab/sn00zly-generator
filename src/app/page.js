@@ -24,7 +24,7 @@ export async function generateMetadata({ searchParams }) {
     return {
       title: "Sn00zly Daily Sleep Planner — today’s naps and bedtime for your baby",
       description:
-        "Enter this morning's wake-up and get today's naps, wake windows and bedtime for your baby (0–24 months). $4.99 a month, cancel anytime.",
+        "Enter this morning's wake-up and get today's naps, wake windows and bedtime for your baby (0–24 months). $6.99 once, no subscription.",
       alternates: { canonical: "/" },
       openGraph: {
         title: "Sn00zly Daily Sleep Planner",

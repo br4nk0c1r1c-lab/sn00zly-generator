@@ -2,7 +2,7 @@
 
 export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://schedule.sn00zly.com").replace(/\/+$/, "");
 export const SHOP_URL = "https://sn00zly.com";
-export const PLANNER_PRICE = 4.99;
+export const PLANNER_PRICE = 6.99;
 export const COUPON_VALUE = 15;
 export const PRODUCT_NAME = "Sn00zly Daily Sleep Planner";
 

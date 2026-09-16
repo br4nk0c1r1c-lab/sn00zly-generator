@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 
 // Meta Conversions API. The purchase happens on Stripe, not Shopify, so the
 // Shopify pixel integration never sees it — this is how Meta learns about
-// planner subscriptions. The browser fires the same event with the same
+// planner purchases. The browser fires the same event with the same
 // event_id on the welcome page, and Meta de-duplicates the pair.
 
 const GRAPH_VERSION = process.env.META_GRAPH_VERSION || "v24.0";

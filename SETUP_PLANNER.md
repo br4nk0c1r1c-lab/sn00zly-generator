@@ -1,22 +1,22 @@
 # Sn00zly Daily Sleep Planner — podešavanje i puštanje
 
-Grana: `daily-sleep-planner`. Generator je sada plaćeni **Sn00zly Daily Sleep Planner** ($4.99/mesečno, Stripe).
+Grana: `daily-sleep-planner`. Generator je sada plaćeni **Sn00zly Daily Sleep Planner**: jednokratna kupovina od **$6.99** preko Stripe-a, bez pretplate. Kupac dobija planner do 24. meseca bebe, Wake Window Cheat Sheet i kod od $15 za bilo koji vodič.
 
 ## Kako radi (ukratko)
 
 | Adresa | Šta je |
 |---|---|
-| `/` | Prodajna stranica: primer plana, šta se dobija, dugme za kupovinu, FAQ. Ako link ima potpisan share (`?n=…&k=…`), prikazuje podeljeni plan + poziv na kupovinu. |
-| `/planner` | Zaključani planner (samo aktivna pretplata). Pamti bebu na uređaju, plan za danas, "rebuild the day", slika i share link, ponuda vodiča sa kuponom, kupon + cheat sheet, "Manage subscription". |
+| `/` | Prodajna stranica: primer plana, šta se dobija, dugme za kupovinu, FAQ. Ako link ima potpisan share (`?n=…&k=…`), prikazuje podeljeni plan i poziv na kupovinu. |
+| `/planner` | Zaključani planner (samo kupci). Pamti bebu na uređaju, plan za danas, "rebuild the day", slika i share link, ponuda vodiča sa kuponom, kupon i cheat sheet. |
 | `/login` | Prijava mejlom: stiže link (važi 30 min), bez lozinke. |
-| `/api/checkout` | Pravi Stripe Checkout (pretplata). |
-| `/api/checkout/complete` | Stripe vraća kupca ovde → odmah je prijavljen → `/planner?welcome=1`. |
-| `/api/stripe/webhook` | Posle kupovine: pravi jedinstven $15 Shopify kupon, šalje Klaviyo događaj (welcome mejl) i Meta Purchase. Beleži otkazivanja. |
-| `/api/portal` | Stripe stranica za otkazivanje / promenu kartice. |
+| `/api/checkout` | Pravi Stripe Checkout (jednokratna uplata, uvek pravi Stripe customer). |
+| `/api/checkout/complete` | Stripe vraća kupca ovde → proveri uplatu, otvori pristup, prijavi kupca → `/planner?welcome=1`. |
+| `/api/stripe/webhook` | Posle kupovine: otvara pristup, pravi jedinstven $15 Shopify kupon, šalje Klaviyo događaj (welcome mejl) i Meta Purchase. Posle punog refund-a zatvara pristup i gasi neiskorišćen kupon. |
 | `/api/share`, `/api/og` | Potpisani share linkovi i slika plana. Nepotpisan link prikazuje samo primer, pa se URL ne može menjati za besplatno korišćenje. |
 | `/api/cheatsheet` | Preuzimanje Cheat Sheet-a (samo za članove). |
 
-Nema baze: Stripe je izvor istine. Kupon se čuva u Stripe customer metadata (`planner_coupon`).
+Nema baze: Stripe je izvor istine. Na Stripe customer-u se čuvaju `planner_access` (`lifetime` / `refunded`), `planner_coupon` i `planner_coupon_id`.
+Ako nekome ručno treba dati pristup (npr. seeding), u Stripe-u na customer-u dodaj metadata `planner_access` = `lifetime`.
 
 ## 1. Env varijable u Vercelu
 
@@ -27,7 +27,7 @@ Promena `NEXT_PUBLIC_*` varijabli traži novi deploy.
 |---|---|---|
 | `NEXT_PUBLIC_SITE_URL` | `https://schedule.sn00zly.com` (za Preview: tačna preview adresa grane) | ne |
 | `STRIPE_SECRET_KEY` | Stripe → Developers → API keys → Secret key (`sk_test_…` / `sk_live_…`) | **da** |
-| `STRIPE_PRICE_ID` | test: `price_1UFzkCLLfbNeUEnKNpA5zlnl`; live: novi ID posle "Copy to live mode" | ne |
+| `STRIPE_PRICE_ID` | ID **jednokratne** cene $6.99 (test i live imaju različite ID-jeve) | ne |
 | `STRIPE_WEBHOOK_SECRET` | `whsec_…` iz koraka 2 | **da** |
 | `AUTH_SECRET` | nasumičan niz, min. 32 znaka (npr. `openssl rand -base64 48`). Ne menjati posle puštanja: promena odjavljuje sve i kvari podeljene linkove. | **da** |
 | `SHOPIFY_STORE_DOMAIN` | `xxxx.myshopify.com` (Shopify admin → Settings → Domains) | ne |
@@ -45,7 +45,7 @@ Promena `NEXT_PUBLIC_*` varijabli traži novi deploy.
 
 Developers → Webhooks → Add endpoint
 - URL: `https://schedule.sn00zly.com/api/stripe/webhook` (za test: preview adresa + `/api/stripe/webhook`)
-- Events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`
+- Events: `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `charge.refunded`
 - Signing secret (`whsec_…`) → `STRIPE_WEBHOOK_SECRET`
 - Test i live mode imaju **odvojene** webhook-ove i tajne.
 
@@ -58,7 +58,7 @@ Ako je na Vercelu uključen *Deployment Protection* za preview, Stripe ne može 
 3. Instaliraj aplikaciju na prodavnicu Sn00zly.
 4. Settings aplikacije → **Client ID** i **Client secret** → Vercel.
 
-Kupon: `PLANNER-XXXXXXXX`, $15, jedna upotreba, važi na sve proizvode, bez isteka.
+Kupon: `PLANNER-XXXXXXXX`, $15, jedna upotreba, važi na sve proizvode, bez isteka i bez minimalne korpe. Posle punog refund-a se automatski gasi.
 
 ## 4. Mejl za prijavu (Google Workspace)
 
@@ -69,12 +69,12 @@ Kupon: `PLANNER-XXXXXXXX`, $15, jedna upotreba, važi na sve proizvode, bez iste
 
 ## 5. Klaviyo
 
-- Novi **flow** sa okidačem metric **"Planner Subscription Started"** (pojaviće se posle prvog test kupovanja). Mejl bez čekanja, sa:
+- Novi **flow** sa okidačem metric **"Planner Purchased"** (pojaviće se posle prvog test kupovanja). Mejl bez čekanja, sa:
   - `{{ event.coupon_code }}` ($15 kod), `{{ event.shop_url }}` (link koji sam primenjuje kod)
   - `{{ event.planner_url }}` i `{{ event.login_url }}`
   - `{{ event.cheat_sheet_url }}` (Cheat Sheet)
-- Opciono: flow na **"Planner Cancellation Scheduled"** / **"Planner Subscription Ended"** (npr. mejl koji poziva nazad).
-- Profili dobijaju `planner_member`, `planner_status`, `planner_coupon`, `planner_renews_at` i `planner_utm_*` → segment "Planner members".
+- Posle refund-a stiže metric **"Planner Refunded"** (za isključivanje iz flow-ova).
+- Profili dobijaju `planner_member`, `planner_coupon`, `planner_purchased_at` i `planner_utm_*` → segment "Planner buyers".
 - Stari flow za besplatan generator (lista `SFCu7v`) više ne dobija nove ljude; pauziraj ga ako šalje nešto vezano za generator.
 
 ## 6. Test (Preview, Stripe Test mode)
@@ -84,12 +84,12 @@ Kupon: `PLANNER-XXXXXXXX`, $15, jedna upotreba, važi na sve proizvode, bez iste
 3. Za minut se na planneru pojavljuje kod `PLANNER-…`; u Shopify → Discounts postoji taj kod; stiže Klaviyo mejl.
 4. Napravi plan → **Save as image** i **Share link** (otvori link u privatnom prozoru: vidi se plan + ponuda).
 5. **Sign out** → `/login` → stiže mejl sa linkom → prijava radi.
-6. **Manage subscription** → Cancel → planner piše do kada je otvoren.
+6. U Stripe-u uradi **Refund** te test uplate → planner se zaključava, a kod u Shopify-ju postaje neaktivan.
 7. Meta Events Manager → Test events: `PageView`, `InitiateCheckout`, `Purchase` (browser + server, spojeni).
 
 ## 7. Puštanje uživo
 
-1. Stripe: *Copy to live mode* za proizvod → novi live Price ID; Customer portal i branding podesiti i u live modu.
+1. Stripe: *Copy to live mode* za proizvod → novi live Price ID (jednokratna cena $6.99); branding podesiti i u live modu.
 2. Live webhook (korak 2) → novi `whsec_…`.
 3. Production env: `sk_live_…`, live `STRIPE_PRICE_ID`, live `STRIPE_WEBHOOK_SECRET`, ostalo kao u testu. **Bez** `META_TEST_EVENT_CODE`.
 4. Merge grane u `main` → Vercel deploy.
@@ -100,6 +100,7 @@ Kupon: `PLANNER-XXXXXXXX`, $15, jedna upotreba, važi na sve proizvode, bez iste
 
 - Link za prijavu se može iskoristiti više puta u roku od 30 minuta.
 - Podeljeni link za jedan plan važi trajno (samo za tu bebu i to vreme buđenja).
-- Dok Stripe ponovo pokušava neuspelo plaćanje (`past_due`), planner ostaje otvoren. Kad Stripe otkaže pretplatu, pristup se zatvara.
+- Delimičan refund ne zatvara pristup, a pun refund zatvara.
+- Kupac sa dva različita mejla ima dva odvojena pristupa. Prijava radi sa mejlom iz checkout-a.
 - Stari linkovi iz mejlova besplatnog generatora sada otvaraju prodajnu stranicu.
 - Lokalni `next build` traži pristup fonts.googleapis.com (next/font), a Vercel ga ima.

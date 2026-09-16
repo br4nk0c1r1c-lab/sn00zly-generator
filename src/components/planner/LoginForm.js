@@ -33,7 +33,7 @@ export default function LoginForm() {
       <div className="card">
         <div className="card-label">Check your inbox</div>
         <p style={{ fontSize: "14px", color: "var(--ink-soft)" }}>
-          If {email} has an active planner subscription, a sign-in link is on its way. It works for 30 minutes.
+          If {email} has planner access, a sign-in link is on its way. It works for 30 minutes.
           Nothing there after a couple of minutes? Check spam, or try the email you used at checkout.
         </p>
       </div>

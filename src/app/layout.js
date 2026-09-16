@@ -24,7 +24,7 @@ export const metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
   title: "Sn00zly Daily Sleep Planner",
   description:
-    "A fresh sleep plan for your baby every morning — naps, wake windows and bedtime built from age and today's wake-up. $4.99 a month, cancel anytime.",
+    "A fresh sleep plan for your baby every morning — naps, wake windows and bedtime built from age and today's wake-up. $6.99 once, no subscription.",
 };
 
 export default function RootLayout({ children }) {

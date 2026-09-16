@@ -465,14 +465,14 @@ function ScheduleResult({ mode, couponCode, name, dob, wake, weeks, wakeMin, str
           </p>
           <div className="price">
             <span className="p">${PLANNER_PRICE}</span>
-            <span className="was" style={{ textDecoration: "none" }}>per month · cancel anytime</span>
+            <span className="was" style={{ textDecoration: "none" }}>one-time · no subscription</span>
           </div>
           <a
             className="btn btn-gold"
             href={`${BASE_PATH}/#pricing`}
             onClick={() => trackEvent("shared_cta_click")}
           >
-            Start my baby’s plan
+            Get the planner
           </a>
         </div>
       )}

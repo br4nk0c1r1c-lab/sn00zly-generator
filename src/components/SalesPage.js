@@ -6,7 +6,7 @@ import { buildSchedule, dur, fmt, parseHM } from "@/lib/schedule-engine";
 import { rangeStr } from "@/lib/schedule-format";
 import { COUPON_VALUE, PLANNER_PRICE } from "@/lib/site";
 
-// Public page: what the planner is, a worked example, and the monthly offer.
+// Public page: what the planner is, a worked example, and the one-time offer.
 // The example is computed by the same engine members use, for a sample
 // 5-month-old, so the demo can never drift from the real product.
 
@@ -82,17 +82,17 @@ const PERKS = [
   ["A heads-up before things change", "When the next nap transition is likely, plus age-specific notes and a tip for your biggest struggle."],
   ["Save it or share it", "Save the plan as an image, or send a link to your partner, a grandparent or the nanny."],
   ["Wake Window Cheat Sheet", "Our printable 0–24 month PDF. Yours to keep."],
-  [`A $${COUPON_VALUE} code for any Sn00zly guide`, `Use it once on any guide or bundle — worth three months of the planner.`],
+  [`A $${COUPON_VALUE} code for any Sn00zly guide`, `Use it once on any guide or bundle — it is worth more than the planner costs.`],
 ];
 
 const FAQ = [
   [
     "Why isn’t it free?",
-    "Free tools usually pay for themselves with your email address. We’d rather charge a small, honest price: you pay, and the planner, the cheat sheet and your code are there straight away.",
+    "Free tools usually pay for themselves with your email address. We’d rather charge a small, honest price once: you pay, and the planner, the cheat sheet and your code are there straight away.",
   ],
   [
-    "How do I cancel?",
-    "Tap “Manage subscription” in the planner and cancel — no emails to write. You keep access until the end of the month you paid for, and the cheat sheet and code stay yours.",
+    "Is it really a one-time payment?",
+    `Yes. You pay $${PLANNER_PRICE} once. No subscription, nothing renews, nothing to cancel. Use the planner every day until your baby turns 2.`,
   ],
   [
     "Which ages does it cover?",
@@ -127,7 +127,7 @@ export default function SalesPage({ signedIn, checkoutNote }) {
         <div className="trustline">
           <span className="chip-trust">Built from pediatrician-reviewed guides</span>
           <span className="chip-trust">0–24 months</span>
-          <span className="chip-trust">Cancel anytime</span>
+          <span className="chip-trust">One-time payment</span>
         </div>
       </header>
 
@@ -135,7 +135,7 @@ export default function SalesPage({ signedIn, checkoutNote }) {
 
       <div className="hero-cta">
         <BuyButton placement="hero" />
-        <p className="no-signup">${PLANNER_PRICE} a month · includes the Wake Window Cheat Sheet and a ${COUPON_VALUE} guide code</p>
+        <p className="no-signup">One-time ${PLANNER_PRICE} · no subscription · includes the Wake Window Cheat Sheet and a ${COUPON_VALUE} guide code</p>
       </div>
 
       <section className="card step-card">
@@ -180,13 +180,13 @@ export default function SalesPage({ signedIn, checkoutNote }) {
         <span className="tag">Sn00zly Daily Sleep Planner</span>
         <div className="price">
           <span className="p">${PLANNER_PRICE}</span>
-          <span className="was" style={{ textDecoration: "none" }}>per month</span>
+          <span className="was" style={{ textDecoration: "none" }}>one-time · no subscription</span>
         </div>
-        <p>Daily plans for your baby, the Wake Window Cheat Sheet, and a ${COUPON_VALUE} code for any Sn00zly guide.</p>
+        <p>Use it every day until your baby turns 2. Includes the Wake Window Cheat Sheet and a ${COUPON_VALUE} code for any Sn00zly guide.</p>
         <BuyButton placement="pricing" />
         <p className="fine-print">
-          Secure checkout by Stripe. ${PLANNER_PRICE} is charged today and every month until you cancel.
-          Cancel anytime from the planner and keep access until the end of the month you paid for.
+          Secure checkout by Stripe. One payment of ${PLANNER_PRICE} — no subscription, nothing renews.
+          Your planner opens the moment you pay.
         </p>
       </section>
 

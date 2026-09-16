@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { findAccessSubscription } from "@/lib/stripe";
+import { findAccessCustomer } from "@/lib/stripe";
 import { SESSION_COOKIE, createSessionValue, readLoginToken, sessionCookieOptions } from "@/lib/session";
 import { SITE_URL } from "@/lib/site";
 
@@ -8,8 +8,8 @@ export async function GET(request) {
   if (!customerId) return NextResponse.redirect(`${SITE_URL}/login?error=expired`);
 
   try {
-    const sub = await findAccessSubscription(customerId);
-    if (!sub) return NextResponse.redirect(`${SITE_URL}/login?error=inactive`);
+    const customer = await findAccessCustomer(customerId);
+    if (!customer) return NextResponse.redirect(`${SITE_URL}/login?error=inactive`);
   } catch (err) {
     console.error("login verify failed:", err);
     return NextResponse.redirect(`${SITE_URL}/login?error=server`);
