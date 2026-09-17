@@ -74,3 +74,23 @@ export function trackEvent(name, props) {
     timer = setInterval(flush, FLUSH_INTERVAL_MS);
   }
 }
+
+// Meta Pixel. Standard events (InitiateCheckout, Purchase) are what a Sales
+// campaign optimises for. eventId pairs a browser event with the server-side
+// Conversions API event so Meta counts it once.
+export function trackMeta(name, params, eventId) {
+  if (typeof window === "undefined") return;
+  let tries = 0;
+  const fire = () => {
+    if (typeof window.fbq === "function") {
+      try {
+        window.fbq("track", name, params || {}, eventId ? { eventID: eventId } : undefined);
+      } catch {
+        // Analytics must never break the product.
+      }
+      return;
+    }
+    if (++tries < 40) setTimeout(fire, 250);
+  };
+  fire();
+}

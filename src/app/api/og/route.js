@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { ImageResponse } from "next/og";
 import { buildSchedule, fmt, parseHM, weeksOld } from "@/lib/schedule-engine";
 import { monthsAndWeeks, poss, rangeStr } from "@/lib/schedule-format";
-import { parseShareSearchParams } from "@/lib/share-params";
+import { verifiedShare } from "@/lib/share-link";
 
 const FORMATS = {
   og: { width: 1200, height: 630 },
@@ -146,7 +146,10 @@ export async function GET(request) {
   const formatKey = FORMATS[requestedFormat] ? requestedFormat : "og";
   const { width, height } = FORMATS[formatKey];
 
-  const parsed = parseShareSearchParams(searchParams);
+  // Only signed (member-created) links render a real baby's schedule.
+  // Anything else gets the sample card, so this route cannot be used as a
+  // free planner by editing the URL.
+  const parsed = verifiedShare(searchParams) || {};
   const name = parsed.name || "Your baby";
   const dob = parsed.dob || defaultDob();
   const wakeStr = parsed.wake || "06:45";
