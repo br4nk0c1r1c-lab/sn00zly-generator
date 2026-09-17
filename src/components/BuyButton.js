@@ -50,7 +50,7 @@ export default function BuyButton({ label, placement }) {
         ? "Opening secure checkout…"
         : status === "error"
           ? "Couldn't open checkout — try again"
-          : label || `Get the planner — $${PLANNER_PRICE}`}
+          : label || `Get the Daily Sleep Planner — $${PLANNER_PRICE}`}
     </button>
   );
 }

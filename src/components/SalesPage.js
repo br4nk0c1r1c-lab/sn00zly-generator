@@ -121,8 +121,8 @@ export default function SalesPage({ signedIn, checkoutNote }) {
         <div className="eyebrow">Sn00zly Daily Sleep Planner</div>
         <h1>Your baby&apos;s sleep plan for today, in ten seconds</h1>
         <p className="lede">
-          Enter this morning&apos;s wake-up. Get today&apos;s naps, wake windows and bedtime — and a
-          rebuilt plan when a nap doesn&apos;t go to plan.
+          Enter this morning&apos;s wake-up time. Get today&apos;s naps, wake windows and bedtime. If a
+          nap runs short or long, update it and the rest of the day rebuilds automatically.
         </p>
         <div className="trustline">
           <span className="chip-trust">Built from pediatrician-reviewed guides</span>
@@ -135,7 +135,11 @@ export default function SalesPage({ signedIn, checkoutNote }) {
 
       <div className="hero-cta">
         <BuyButton placement="hero" />
-        <p className="no-signup">One-time ${PLANNER_PRICE} · no subscription · includes the Wake Window Cheat Sheet and a ${COUPON_VALUE} guide code</p>
+        <p className="no-signup">
+          ${PLANNER_PRICE} one-time · No subscription
+          <br />+ Wake Window Cheat Sheet
+          <br />+ ${COUPON_VALUE} credit toward any Sn00zly guide or bundle
+        </p>
       </div>
 
       <section className="card step-card">
