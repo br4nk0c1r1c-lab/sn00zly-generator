@@ -85,30 +85,42 @@ const PERKS = [
   [`A $${COUPON_VALUE} code for any Sn00zly guide`, `Use it once on any guide or bundle — it is worth more than the planner costs.`],
 ];
 
+const ABOUT = [
+  "The Sn00zly Daily Sleep Planner was created to turn age-appropriate sleep guidance into a simple plan you can actually use each day.",
+  "It builds a flexible daily sleep plan from your baby\u2019s age and morning wake-up time, using wake windows, nap patterns and bedtime ranges drawn from Sn00zly\u2019s pediatrician-reviewed sleep guides.",
+  "If a nap runs shorter or longer than expected, you can update the real end time and the planner recalculates the rest of the day automatically.",
+  "The goal is not to force your baby onto a rigid schedule. It is to give you a practical starting point for the day, while still following your baby\u2019s cues and adjusting as real life happens.",
+  "The planner is designed for babies from birth to 24 months and is based on the same age-specific guidance used throughout the Sn00zly sleep system.",
+];
+
 const FAQ = [
   [
-    "Why isn’t it free?",
-    "Free tools usually pay for themselves with your email address. We’d rather charge a small, honest price once: you pay, and the planner, the cheat sheet and your code are there straight away.",
+    "Is it really a one-time payment?",
+    `Yes. You pay $${PLANNER_PRICE} once. No subscription, no renewals, nothing to cancel. Use the planner every day until your baby turns 2.`,
   ],
   [
-    "Is it really a one-time payment?",
-    `Yes. You pay $${PLANNER_PRICE} once. No subscription, nothing renews, nothing to cancel. Use the planner every day until your baby turns 2.`,
+    "What happens if a nap runs shorter or longer than planned?",
+    "Just enter when the nap actually ended. The planner recalculates the rest of the day, including the next nap and bedtime window.",
   ],
   [
     "Which ages does it cover?",
-    "Birth to 24 months. For the first weeks the plan follows a feeding rhythm instead of a fixed bedtime — that is deliberate, because newborn sleep doesn’t run on a clock yet.",
+    "Birth to 24 months. The plan adjusts by age, including wake windows, nap patterns and bedtime guidance. For newborns, the planner follows a more flexible feeding-and-sleep rhythm rather than forcing a fixed schedule.",
   ],
   [
     "Can my partner use it too?",
-    "Yes. Sign in with your email on any phone or computer and we send a sign-in link — no password to remember.",
+    "Yes. You can sign in with the same email from any phone, tablet or computer. We\u2019ll send a secure sign-in link, so there\u2019s no password to remember.",
   ],
   [
     `How does the $${COUPON_VALUE} code work?`,
-    `It is in your planner and in your welcome email. It works once on anything at sn00zly.com — a $49 bundle becomes $${49 - COUPON_VALUE}. The shop links in the planner apply it for you.`,
+    `Your $${COUPON_VALUE} code appears inside the planner and in your welcome email. You can use it once on any Sn00zly guide or bundle at sn00zly.com. For example, a $49 bundle becomes $${49 - COUPON_VALUE}.`,
+  ],
+  [
+    "What is included with my purchase?",
+    `You get access to the Daily Sleep Planner, the 0\u201324 Month Wake Window Cheat Sheet, and a $${COUPON_VALUE} code toward any Sn00zly guide or bundle.`,
   ],
   [
     "Is this medical advice?",
-    "No. The planner is general educational guidance built from our pediatrician-reviewed guides. It is a flexible starting point — follow your baby’s cues, and talk to your pediatrician about any concern.",
+    "No. The planner provides general educational sleep guidance based on Sn00zly\u2019s pediatrician-reviewed guides. It is designed as a flexible starting point, not a diagnosis or medical recommendation. Follow your baby\u2019s cues and speak with your pediatrician about any health or feeding concerns.",
   ],
 ];
 
@@ -124,6 +136,14 @@ export default function SalesPage({ signedIn, checkoutNote }) {
           Enter this morning&apos;s wake-up time. Get today&apos;s naps, wake windows and bedtime. If a
           nap runs short or long, update it and the rest of the day rebuilds automatically.
         </p>
+        <details className="about-toggle">
+          <summary>What is the Sn00zly Daily Sleep Planner?</summary>
+          <div>
+            {ABOUT.map((line) => (
+              <p key={line}>{line}</p>
+            ))}
+          </div>
+        </details>
         <div className="trustline">
           <span className="chip-trust">Built from pediatrician-reviewed guides</span>
           <span className="chip-trust">0–24 months</span>
