@@ -53,6 +53,42 @@ function saveBaby(baby) {
   }
 }
 
+// Copies the baby to the member's Klaviyo profile (age-matched emails). Only
+// sent when the name, date of birth or age band changed since the last sync,
+// so a member re-planning every morning does not call it every day.
+const BABY_SYNC_KEY = "sn_planner_baby_synced";
+
+function syncBabyProfile({ name, dob }) {
+  if (!dob) return;
+  let band = "";
+  try {
+    band = bundleForWeeks(weeksOld(dob)).range;
+  } catch {
+    return;
+  }
+  const key = `${(name || "").trim().slice(0, 18)}|${dob}|${band}`;
+  try {
+    if (window.localStorage.getItem(BABY_SYNC_KEY) === key) return;
+  } catch {
+    // Storage blocked: sync anyway, the server de-duplicates.
+  }
+  fetch(`${BASE_PATH}/api/planner/profile`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, dob }),
+    keepalive: true,
+  })
+    .then((res) => {
+      if (!res.ok) return;
+      try {
+        window.localStorage.setItem(BABY_SYNC_KEY, key);
+      } catch {
+        // ignore
+      }
+    })
+    .catch(() => {});
+}
+
 async function fetchShareLinks(fields) {
   const res = await fetch(`${BASE_PATH}/api/share`, {
     method: "POST",
@@ -620,6 +656,8 @@ export default function ScheduleGenerator({ initial, mode = "member", couponCode
       if (saved?.name) setName(String(saved.name).slice(0, 18));
       if (saved?.dob) setDob(String(saved.dob));
       if (saved?.struggle !== undefined) setStruggle(saved.struggle);
+      // A saved baby may have moved into the next age band since last visit.
+      if (saved?.dob) syncBabyProfile({ name: saved.name, dob: saved.dob });
     }
     if (initial?.dob) {
       setResultView(
@@ -647,6 +685,7 @@ export default function ScheduleGenerator({ initial, mode = "member", couponCode
     e.preventDefault();
     trackEvent("generator_complete", { struggle: struggle || undefined });
     saveBaby({ name, dob, struggle });
+    if (isMember) syncBabyProfile({ name, dob });
     commit(null, { scroll: true });
   }
 
