@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { fulfillCheckout, revokeForRefund } from "@/lib/fulfillment";
+import { scheduleJudgeMeReview } from "@/lib/judgeme";
 
 // Stripe → Developers → Webhooks, endpoint https://schedule.sn00zly.com/api/stripe/webhook
 // Events: checkout.session.completed, checkout.session.async_payment_succeeded,
@@ -25,11 +26,30 @@ export async function POST(request) {
   try {
     switch (event.type) {
       case "checkout.session.completed":
-      case "checkout.session.async_payment_succeeded": {
-        const session = event.data.object;
-        if (session.mode === "payment") await fulfillCheckout(session.id);
-        break;
-      }
+case "checkout.session.async_payment_succeeded": {
+  const session = event.data.object;
+
+  if (session.mode === "payment" && session.payment_status === "paid") {
+    await fulfillCheckout(session.id);
+
+    try {
+      await scheduleJudgeMeReview({
+        name:
+          session.customer_details?.name ||
+          session.customer_name ||
+          "Sn00zly Customer",
+        email:
+          session.customer_details?.email ||
+          session.customer_email,
+        delayDays: 7,
+      });
+    } catch (err) {
+      console.error("Judge.me review request failed:", err);
+    }
+  }
+
+  break;
+}
       case "charge.refunded":
         await revokeForRefund(event.data.object);
         break;
