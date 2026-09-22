@@ -1,5 +1,6 @@
 import { Fragment } from "react";
 import BuyButton from "@/components/BuyButton";
+import PlannerDemo from "@/components/PlannerDemo";
 import { Brandmark, TopBar } from "@/components/BrandHeader";
 import { PageShell } from "@/components/TrustCards";
 import { buildSchedule, dur, fmt, parseHM } from "@/lib/schedule-engine";
@@ -160,6 +161,11 @@ export default function SalesPage({ signedIn, checkoutNote }) {
           <br />+ Wake Window Cheat Sheet
           <br />+ ${COUPON_VALUE} credit toward any Sn00zly guide or bundle
         </p>
+      </div>
+
+      <div style={{ marginTop: 24 }}>
+        <div className="card-label" style={{ textAlign: "center" }}>See it work</div>
+        <PlannerDemo />
       </div>
 
       <section className="card step-card">
