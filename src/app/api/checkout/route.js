@@ -23,7 +23,7 @@ export async function POST(request) {
   }
 
   // Stripe metadata values are strings up to 500 chars; keep only what the
-  // webhook needs for attribution (Klaviyo) and ad matching (Meta CAPI).
+  // webhook needs for attribution (Klaviyo) and ad matching (Meta CAPI, TikTok Events API).
   const metadata = { product: "daily_sleep_planner" };
   const utm = payload.utm && typeof payload.utm === "object" ? payload.utm : {};
   for (const key of UTM_KEYS) {
@@ -34,6 +34,10 @@ export async function POST(request) {
   const fbc = clip(request.cookies.get("_fbc")?.value, 300) || clip(payload.fbc, 300);
   if (fbp) metadata.fbp = fbp;
   if (fbc) metadata.fbc = fbc;
+  const ttclid = clip(payload.ttclid, 300);
+  const ttp = clip(request.cookies.get("_ttp")?.value, 300);
+  if (ttclid) metadata.tiktok_ttclid = ttclid;
+  if (ttp) metadata.tiktok_ttp = ttp;
   const ip = clip(request.headers.get("x-forwarded-for")?.split(",")[0], 60);
   if (ip) metadata.ip = ip;
   const ua = clip(request.headers.get("user-agent"), 400);

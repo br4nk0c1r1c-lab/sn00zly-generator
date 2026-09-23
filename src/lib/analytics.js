@@ -94,3 +94,22 @@ export function trackMeta(name, params, eventId) {
   };
   fire();
 }
+
+// TikTok Pixel. Same retry-until-ready idea as trackMeta, for the same
+// afterInteractive race — see the comment at the top of this file.
+export function trackTikTok(name, params, eventId) {
+  if (typeof window === "undefined") return;
+  let tries = 0;
+  const fire = () => {
+    if (window.ttq && typeof window.ttq.track === "function") {
+      try {
+        window.ttq.track(name, params || {}, eventId ? { event_id: eventId } : undefined);
+      } catch {
+        // Analytics must never break the product.
+      }
+      return;
+    }
+    if (++tries < 40) setTimeout(fire, 250);
+  };
+  fire();
+}

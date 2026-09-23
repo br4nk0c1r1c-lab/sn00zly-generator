@@ -2,6 +2,7 @@ import { getStripe, grantAccess, isPaidPlannerSession, ACCESS_KEY, ACCESS_REFUND
 import { createPlannerCoupon, deactivatePlannerCoupon } from "@/lib/shopify";
 import { trackKlaviyoEvent } from "@/lib/klaviyo";
 import { sendMetaEvent } from "@/lib/meta-capi";
+import { sendTikTokEvent } from "@/lib/tiktok-capi";
 import { SITE_URL, PLANNER_PRICE, PRODUCT_NAME, COUPON_VALUE, SHOP_URL } from "@/lib/site";
 
 // Everything that happens once per purchase, driven by Stripe's
@@ -15,6 +16,8 @@ function metaFromSession(session) {
   return {
     fbp: m.fbp || undefined,
     fbc: m.fbc || undefined,
+    ttclid: m.tiktok_ttclid || undefined,
+    ttp: m.tiktok_ttp || undefined,
     ip: m.ip || undefined,
     userAgent: m.ua || undefined,
     utm: {
@@ -50,7 +53,7 @@ export async function fulfillCheckout(sessionId) {
   if (customer.metadata?.[ACCESS_KEY] === ACCESS_REFUNDED) return;
 
   const email = customer.email || session.customer_details?.email;
-  const { fbp, fbc, ip, userAgent, utm } = metaFromSession(session);
+  const { fbp, fbc, ttclid, ttp, ip, userAgent, utm } = metaFromSession(session);
   const cleanUtm = Object.fromEntries(Object.entries(utm).filter(([, v]) => v));
 
   // 1. Coupon first: the welcome email needs it. If Shopify fails, stop
@@ -101,6 +104,28 @@ export async function fulfillCheckout(sessionId) {
       value: (session.amount_total ?? Math.round(PLANNER_PRICE * 100)) / 100,
       currency: (session.currency || "usd").toUpperCase(),
       contentName: PRODUCT_NAME,
+    });
+  } catch (err) {
+    // Never fail the webhook (and re-run Klaviyo) because of ad tracking.
+    console.error(err);
+  }
+
+  // 4. TikTok: same purchase signal, for the TikTok ad campaign.
+  try {
+    await sendTikTokEvent({
+      eventName: "Purchase",
+      eventId: session.id,
+      eventTime: session.created,
+      email,
+      ttclid,
+      ttp,
+      ip,
+      userAgent,
+      sourceUrl: `${SITE_URL}/`,
+      value: (session.amount_total ?? Math.round(PLANNER_PRICE * 100)) / 100,
+      currency: (session.currency || "usd").toUpperCase(),
+      contentId: "daily-sleep-planner",
+      contentName: "Daily Sleep Planner",
     });
   } catch (err) {
     // Never fail the webhook (and re-run Klaviyo) because of ad tracking.
