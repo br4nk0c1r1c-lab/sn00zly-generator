@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { trackEvent, trackMeta, trackTikTok } from "@/lib/analytics";
+import { tiktokProductParams } from "@/lib/tiktok";
 import { PLANNER_PRICE } from "@/lib/site";
 
 export default function WelcomeBanner({ eventId }) {
@@ -17,7 +18,7 @@ export default function WelcomeBanner({ eventId }) {
     }
     if (already) return;
     trackMeta("Purchase", { value: PLANNER_PRICE, currency: "USD", content_name: "Daily Sleep Planner" }, eventId);
-    trackTikTok("Purchase", { value: PLANNER_PRICE, currency: "USD" }, eventId);
+    trackTikTok("Purchase", tiktokProductParams(), eventId);
     trackEvent("purchase", { transaction_id: eventId, value: PLANNER_PRICE, currency: "USD" });
     // Drop eid from the address bar so a refresh or a bookmark is clean.
     try {

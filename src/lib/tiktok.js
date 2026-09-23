@@ -1,9 +1,27 @@
+import { PLANNER_PRICE } from "@/lib/site";
+
 // Captures the TikTok click id from the landing URL so it can travel with
 // checkout into the Stripe metadata the webhook reads for the Events API
 // call. Same first-touch-per-session idea as src/lib/utm.js.
 
 const STORAGE_KEY = "sn_ttclid";
 const MAX_VALUE_LENGTH = 200;
+
+// Same product identity used server-side in src/lib/fulfillment.js's TikTok
+// Events API call — every ViewContent/InitiateCheckout/Purchase should
+// describe the same single product.
+const CONTENT_ID = "daily-sleep-planner";
+const CONTENT_NAME = "Daily Sleep Planner";
+
+/** Shared params for every TikTok product event: ViewContent, InitiateCheckout, Purchase. */
+export function tiktokProductParams() {
+  return {
+    content_type: "product",
+    contents: [{ content_id: CONTENT_ID, content_name: CONTENT_NAME, quantity: 1, price: PLANNER_PRICE }],
+    value: PLANNER_PRICE,
+    currency: "USD",
+  };
+}
 
 /** Call once, on mount of the root client component. */
 export function captureTtclid() {

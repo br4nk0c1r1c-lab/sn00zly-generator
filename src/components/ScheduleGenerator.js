@@ -15,6 +15,7 @@ import {
 import { poss, rangeStr } from "@/lib/schedule-format";
 import { bundleForWeeks } from "@/lib/bundles";
 import { trackEvent, trackTikTok } from "@/lib/analytics";
+import { tiktokProductParams } from "@/lib/tiktok";
 import { BASE_PATH } from "@/lib/base-path";
 import { COUPON_VALUE, PLANNER_PRICE, shopLinkWithCode } from "@/lib/site";
 
@@ -647,7 +648,7 @@ export default function ScheduleGenerator({ initial, mode = "member", couponCode
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     trackEvent(isMember ? "planner_open" : "shared_view");
-    trackTikTok("ViewContent");
+    trackTikTok("ViewContent", tiktokProductParams());
     const now = new Date();
     setMaxDob(
       `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`

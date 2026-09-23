@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { trackEvent, trackMeta, trackTikTok } from "@/lib/analytics";
 import { captureUtm, getUtm } from "@/lib/utm";
-import { captureTtclid, getTtclid } from "@/lib/tiktok";
+import { captureTtclid, getTtclid, tiktokProductParams } from "@/lib/tiktok";
 import { BASE_PATH } from "@/lib/base-path";
 import { PLANNER_PRICE } from "@/lib/site";
 
@@ -20,7 +20,7 @@ export default function BuyButton({ label, placement }) {
     setStatus("loading");
     trackEvent("begin_checkout", { placement, value: PLANNER_PRICE, currency: "USD" });
     trackMeta("InitiateCheckout", { value: PLANNER_PRICE, currency: "USD", content_name: "Daily Sleep Planner" });
-    trackTikTok("InitiateCheckout", { value: PLANNER_PRICE, currency: "USD" });
+    trackTikTok("InitiateCheckout", tiktokProductParams());
 
     // Meta's click id only lands in the _fbc cookie once the pixel has run;
     // passing it along covers a buyer who clicks before that happens.

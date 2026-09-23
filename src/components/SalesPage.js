@@ -1,6 +1,7 @@
 import { Fragment } from "react";
 import BuyButton from "@/components/BuyButton";
 import PlannerDemo from "@/components/PlannerDemo";
+import ViewContentTracker from "@/components/ViewContentTracker";
 import { Brandmark, TopBar } from "@/components/BrandHeader";
 import { PageShell } from "@/components/TrustCards";
 import { buildSchedule, dur, fmt, parseHM } from "@/lib/schedule-engine";
@@ -128,6 +129,7 @@ const FAQ = [
 export default function SalesPage({ signedIn, checkoutNote }) {
   return (
     <PageShell>
+      <ViewContentTracker signedIn={signedIn} />
       <TopBar signedIn={signedIn} />
       <header className="app-head">
         <Brandmark />
