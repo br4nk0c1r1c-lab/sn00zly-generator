@@ -56,9 +56,15 @@ export async function POST(request) {
       billing_address_collection: "auto",
       allow_promotion_codes: false,
       metadata,
+      // Stripe only shows this checkbox where required; the webhook decides
+      // whether to subscribe the buyer to the newsletter from the result.
+      consent_collection: { promotions: "auto" },
       custom_text: {
         submit: {
           message: `One-time payment of $${PLANNER_PRICE}. No subscription — nothing renews.`,
+        },
+        after_submit: {
+          message: "You'll also get occasional sleep tips and offers from Sn00zly. Unsubscribe anytime.",
         },
       },
     });

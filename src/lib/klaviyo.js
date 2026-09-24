@@ -45,3 +45,48 @@ export async function trackKlaviyoEvent({ email, metric, properties = {}, profil
     throw new Error(`Klaviyo event "${metric}" failed: ${res.status} ${text.slice(0, 300)}`);
   }
 }
+
+/**
+ * Subscribe Profiles API: opts an email into email marketing on the given
+ * list. Async/job-based like the old free-guide subscribe — a 200 confirms
+ * the job was accepted, not that the subscription has landed yet.
+ */
+export async function subscribeToNewsletterList({ email, customSource }) {
+  const listId = process.env.KLAVIYO_NEWSLETTER_LIST_ID;
+  if (!process.env.KLAVIYO_PRIVATE_API_KEY || !listId) {
+    console.warn("Klaviyo newsletter list not configured; skipped subscribe");
+    return;
+  }
+  const body = {
+    data: {
+      type: "profile-subscription-bulk-create-job",
+      attributes: {
+        custom_source: customSource,
+        profiles: {
+          data: [
+            {
+              type: "profile",
+              attributes: {
+                email,
+                subscriptions: { email: { marketing: { consent: "SUBSCRIBED" } } },
+              },
+            },
+          ],
+        },
+      },
+      relationships: {
+        list: { data: { type: "list", id: listId } },
+      },
+    },
+  };
+
+  const res = await fetch(`${KLAVIYO_API_BASE}/profile-subscription-bulk-create-jobs/`, {
+    method: "POST",
+    headers: klaviyoHeaders(),
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Klaviyo newsletter subscribe failed: ${res.status} ${text.slice(0, 300)}`);
+  }
+}

@@ -1,6 +1,6 @@
 import { getStripe, grantAccess, isPaidPlannerSession, ACCESS_KEY, ACCESS_REFUNDED } from "@/lib/stripe";
 import { createPlannerCoupon, deactivatePlannerCoupon } from "@/lib/shopify";
-import { trackKlaviyoEvent } from "@/lib/klaviyo";
+import { trackKlaviyoEvent, subscribeToNewsletterList } from "@/lib/klaviyo";
 import { sendMetaEvent } from "@/lib/meta-capi";
 import { sendTikTokEvent } from "@/lib/tiktok-capi";
 import { SITE_URL, PLANNER_PRICE, PRODUCT_NAME, COUPON_VALUE, SHOP_URL } from "@/lib/site";
@@ -88,7 +88,22 @@ export async function fulfillCheckout(sessionId) {
     });
   }
 
-  // 3. Meta: the purchase signal the ad campaign optimises for.
+  // 3. Newsletter consent: Stripe's own checkbox (shown per its "auto" rules,
+  // which today means US customers) decides whether this email joins the
+  // general marketing list, separate from the purchase-triggered flow above.
+  const promo = session.consent?.promotions;
+  const isUS = session.customer_details?.address?.country === "US";
+  const shouldSubscribe = promo === "opt_in" || (isUS && promo !== "opt_out");
+  if (email && shouldSubscribe) {
+    try {
+      await subscribeToNewsletterList({ email, customSource: "Planner checkout" });
+    } catch (err) {
+      // Never fail the webhook (and re-run everything above) over a marketing subscribe.
+      console.error("newsletter subscribe failed:", err);
+    }
+  }
+
+  // 4. Meta: the purchase signal the ad campaign optimises for.
   try {
     await sendMetaEvent({
       eventName: "Purchase",
@@ -110,7 +125,7 @@ export async function fulfillCheckout(sessionId) {
     console.error(err);
   }
 
-  // 4. TikTok: same purchase signal, for the TikTok ad campaign.
+  // 5. TikTok: same purchase signal, for the TikTok ad campaign.
   try {
     await sendTikTokEvent({
       eventName: "Purchase",
