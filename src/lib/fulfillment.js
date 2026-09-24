@@ -42,6 +42,17 @@ function splitCustomerName(fullName) {
   return lastName ? { firstName: trimmed.slice(0, spaceIndex), lastName } : { firstName: trimmed.slice(0, spaceIndex) };
 }
 
+// Only the standard Klaviyo location fields we actually have from Stripe —
+// no street or postal code. A missing field is left out rather than sent
+// blank, so it can't overwrite what's already on the profile.
+function customerLocation(address) {
+  const location = {};
+  if (address?.city) location.city = address.city;
+  if (address?.state) location.region = address.state;
+  if (address?.country) location.country = address.country;
+  return location;
+}
+
 async function ensureCoupon(customer) {
   if (customer.metadata?.planner_coupon) return customer.metadata.planner_coupon;
   const { code, id } = await createPlannerCoupon({ email: customer.email || customer.id });
@@ -77,10 +88,12 @@ export async function fulfillCheckout(sessionId) {
   // 2. Klaviyo: profile + event that triggers the welcome flow.
   if (email) {
     const { firstName, lastName } = splitCustomerName(session.customer_details?.name);
+    const location = customerLocation(session.customer_details?.address);
     await trackKlaviyoEvent({
       email,
       firstName,
       lastName,
+      location,
       metric: "Planner Purchased",
       uniqueId: session.id,
       value: PLANNER_PRICE,

@@ -24,6 +24,7 @@ export async function trackKlaviyoEvent({
   profileProperties = {},
   firstName,
   lastName,
+  location,
   uniqueId,
   value,
 }) {
@@ -31,13 +32,14 @@ export async function trackKlaviyoEvent({
     console.warn(`Klaviyo key missing; skipped event "${metric}"`);
     return;
   }
-  // first_name/last_name are standard Klaviyo profile fields, so they sit
-  // alongside email rather than in the custom `properties` bag. Omitted
-  // entirely when blank, so an empty value never overwrites a name already
-  // on the profile.
+  // first_name/last_name/location are standard Klaviyo profile fields, so
+  // they sit alongside email rather than in the custom `properties` bag.
+  // Omitted entirely when blank, so an empty value never overwrites data
+  // already on the profile.
   const profileAttributes = { email, properties: profileProperties };
   if (firstName) profileAttributes.first_name = firstName;
   if (lastName) profileAttributes.last_name = lastName;
+  if (location && Object.keys(location).length) profileAttributes.location = location;
   const attributes = {
     properties,
     metric: { data: { type: "metric", attributes: { name: metric } } },
