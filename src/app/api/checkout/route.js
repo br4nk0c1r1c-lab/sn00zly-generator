@@ -56,12 +56,9 @@ export async function POST(request) {
       billing_address_collection: "auto",
       allow_promotion_codes: false,
       metadata,
-      // consent_collection.promotions is disabled until the Stripe account
-      // agrees to Stripe's Terms of Service for it at
-      // https://dashboard.stripe.com/settings/checkout — until then Stripe
-      // rejects every session with `consent_collection` set (see
-      // fulfillment.js: session.consent is simply absent, so the webhook
-      // falls back to its US-customer rule).
+      // Stripe only shows this checkbox where required; the webhook decides
+      // whether to subscribe the buyer to the newsletter from the result.
+      consent_collection: { promotions: "auto" },
       custom_text: {
         submit: {
           message: `One-time payment of $${PLANNER_PRICE}. No subscription — nothing renews.`,
