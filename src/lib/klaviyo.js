@@ -17,18 +17,34 @@ function klaviyoHeaders() {
  * Record a Klaviyo event (metric) for a profile.
  * Flows in Klaviyo trigger on the metric name, e.g. "Planner Subscription Started".
  */
-export async function trackKlaviyoEvent({ email, metric, properties = {}, profileProperties = {}, uniqueId, value }) {
+export async function trackKlaviyoEvent({
+  email,
+  metric,
+  properties = {},
+  profileProperties = {},
+  firstName,
+  lastName,
+  uniqueId,
+  value,
+}) {
   if (!process.env.KLAVIYO_PRIVATE_API_KEY) {
     console.warn(`Klaviyo key missing; skipped event "${metric}"`);
     return;
   }
+  // first_name/last_name are standard Klaviyo profile fields, so they sit
+  // alongside email rather than in the custom `properties` bag. Omitted
+  // entirely when blank, so an empty value never overwrites a name already
+  // on the profile.
+  const profileAttributes = { email, properties: profileProperties };
+  if (firstName) profileAttributes.first_name = firstName;
+  if (lastName) profileAttributes.last_name = lastName;
   const attributes = {
     properties,
     metric: { data: { type: "metric", attributes: { name: metric } } },
     profile: {
       data: {
         type: "profile",
-        attributes: { email, properties: profileProperties },
+        attributes: profileAttributes,
       },
     },
   };

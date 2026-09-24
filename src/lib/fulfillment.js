@@ -30,6 +30,18 @@ function metaFromSession(session) {
   };
 }
 
+// Stripe collects a single "name" field; Klaviyo wants it split. Returns {}
+// for a blank name so the caller never overwrites an existing profile name
+// with nothing.
+function splitCustomerName(fullName) {
+  const trimmed = typeof fullName === "string" ? fullName.trim() : "";
+  if (!trimmed) return {};
+  const spaceIndex = trimmed.indexOf(" ");
+  if (spaceIndex === -1) return { firstName: trimmed };
+  const lastName = trimmed.slice(spaceIndex + 1).trim();
+  return lastName ? { firstName: trimmed.slice(0, spaceIndex), lastName } : { firstName: trimmed.slice(0, spaceIndex) };
+}
+
 async function ensureCoupon(customer) {
   if (customer.metadata?.planner_coupon) return customer.metadata.planner_coupon;
   const { code, id } = await createPlannerCoupon({ email: customer.email || customer.id });
@@ -64,8 +76,11 @@ export async function fulfillCheckout(sessionId) {
 
   // 2. Klaviyo: profile + event that triggers the welcome flow.
   if (email) {
+    const { firstName, lastName } = splitCustomerName(session.customer_details?.name);
     await trackKlaviyoEvent({
       email,
+      firstName,
+      lastName,
       metric: "Planner Purchased",
       uniqueId: session.id,
       value: PLANNER_PRICE,
